@@ -13,9 +13,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body className="min-h-screen bg-[var(--color-bg)]">
+      <body className="min-h-screen bg-[#F5F5F7]">
         <div className="min-h-screen">
-          <div className="mx-auto min-h-screen max-w-md">
+          <div className="mx-auto min-h-screen max-w-[430px]">
             {children}
           </div>
         </div>

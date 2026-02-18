@@ -1,65 +1,74 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { motion } from 'framer-motion';
-import { Check } from 'lucide-react';
 import { CONFIG, Habit } from '@/lib/config';
 import {
   getCurrentUser,
   clearCurrentUser,
   getEntryForDate,
   saveEntry,
-  calculateTotalPoints,
   calculateCurrentStreak,
   getUserEntries,
   User,
   DailyEntry,
 } from '@/lib/storage';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { ProgressCircle } from '@/components/ui/ProgressCircle';
-import { HabitItem } from '@/components/HabitItem';
-import { StreakCard } from '@/components/StreakCard';
-import { CalendarGrid } from '@/components/CalendarGrid';
+import { ProgressBar } from '@/components/ProgressBar';
+import { HabitCard } from '@/components/HabitCard';
 import { BottomNav } from '@/components/BottomNav';
 
-function useAnimatedNumber(value: number, duration = 350) {
-  const [display, setDisplay] = useState(value);
-  const prev = useRef(value);
-
-  useEffect(() => {
-    const from = prev.current;
-    const to = value;
-    prev.current = value;
-
-    const start = performance.now();
-    let raf = 0;
-    const tick = (t: number) => {
-      const p = Math.min(1, (t - start) / duration);
-      const eased = 1 - Math.pow(1 - p, 3);
-      setDisplay(Math.round(from + (to - from) * eased));
-      if (p < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [value, duration]);
-
-  return display;
-}
+const HABIT_UI: Record<
+  string,
+  { subtitle: string; background: string; iconBackground: string }
+> = {
+  habit1: {
+    subtitle: 'Entrenamiento o actividad física',
+    background: '#E8F4E8',
+    iconBackground: 'rgba(52,199,89,0.18)',
+  },
+  habit2: {
+    subtitle: 'Comer más sano hoy',
+    background: '#FFF2E8',
+    iconBackground: 'rgba(255,149,0,0.18)',
+  },
+  habit3: {
+    subtitle: 'Cuidar mente y corazón',
+    background: '#F0E8F4',
+    iconBackground: 'rgba(175,82,222,0.18)',
+  },
+  habit4: {
+    subtitle: 'Levantarte temprano',
+    background: '#FFF9E8',
+    iconBackground: 'rgba(255,204,0,0.22)',
+  },
+  habit5: {
+    subtitle: 'Leer y aprender',
+    background: '#E8F0F4',
+    iconBackground: 'rgba(90,200,250,0.22)',
+  },
+  habit6: {
+    subtitle: 'Oración del día',
+    background: '#F4E8E8',
+    iconBackground: 'rgba(255,45,85,0.15)',
+  },
+  habit7: {
+    subtitle: 'Ofrecer un rosario',
+    background: '#E8E8F4',
+    iconBackground: 'rgba(99,102,241,0.20)',
+  },
+};
 
 export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [habits, setHabits] = useState<Record<string, boolean>>({});
-  const [totalPoints, setTotalPoints] = useState(0);
   const [streak, setStreak] = useState(0);
   const [entries, setEntries] = useState<DailyEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
 
   const today = format(new Date(), 'yyyy-MM-dd');
 
@@ -94,22 +103,18 @@ export default function DashboardPage() {
       setHabits(init);
     }
 
-    const [points, userStreak, userEntries] = await Promise.all([
-      calculateTotalPoints(userId),
+    const [userStreak, userEntries] = await Promise.all([
       calculateCurrentStreak(userId),
       getUserEntries(userId),
     ]);
 
-    setTotalPoints(points);
     setStreak(userStreak);
     setEntries(userEntries);
-    setHasChanges(false);
     setLoading(false);
   };
 
   const handleHabitToggle = (habitId: string) => {
     setHabits((prev) => ({ ...prev, [habitId]: !prev[habitId] }));
-    setHasChanges(true);
   };
 
   const handleSave = async () => {
@@ -149,152 +154,94 @@ export default function DashboardPage() {
     []
   );
 
-  const animatedPoints = useAnimatedNumber(totalPoints);
-
   if (!user) return null;
 
   return (
     <div className="min-h-screen pb-28">
-      {/* Header */}
-      <header className="px-4 pt-6">
+      <header className="px-5 pt-7">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-sm text-[var(--color-text-muted)]">{dateLabel}</p>
-            <h1 className="ios-title mt-1 text-xl font-semibold">Hoy</h1>
+            <div className="text-[22px] font-semibold text-[var(--color-text)]">
+              Hola, {user.name.split(' ')[0]}
+            </div>
+            <div className="mt-1 text-[15px] text-[var(--color-text-muted)]">{dateLabel}</div>
           </div>
 
-          <button onClick={handleLogout} className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white shadow-[var(--shadow)] border border-black/5">
-              <span className="text-sm font-semibold">
-                {user.name
-                  .split(' ')
-                  .slice(0, 2)
-                  .map((p) => p[0]?.toUpperCase())
-                  .join('')}
-              </span>
-            </div>
+          <button
+            onClick={handleLogout}
+            className="h-11 w-11 rounded-full bg-white border border-black/5 shadow-[var(--shadow)] flex items-center justify-center"
+            aria-label="Cerrar sesión"
+          >
+            <span className="text-sm font-semibold">
+              {user.name
+                .split(' ')
+                .slice(0, 2)
+                .map((p) => p[0]?.toUpperCase())
+                .join('')}
+            </span>
           </button>
         </div>
       </header>
 
-      <main className="px-4 pt-4 space-y-4">
+      <main className="px-5 pt-5">
         {loading ? (
-          <div className="py-10 text-center text-sm text-[var(--color-text-muted)]">Cargando…</div>
+          <div className="py-12 text-center text-sm text-[var(--color-text-muted)]">Cargando…</div>
         ) : (
           <>
-            {/* Main progress card */}
-            <Card className="p-4">
-              <div className="flex items-center gap-4">
-                <div className="relative">
-                  <ProgressCircle value={progressValue} size={96} stroke={10} />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center">
-                      <div className="ios-title text-lg font-semibold">{completedCount}</div>
-                      <div className="text-[11px] text-[var(--color-text-muted)]">de {CONFIG.habits.length}</div>
-                    </div>
-                  </div>
-                </div>
+            <div className="rounded-3xl bg-white shadow-[var(--shadow)] border border-black/5 p-5">
+              <ProgressBar
+                value={progressValue}
+                label={`${completedCount}/${CONFIG.habits.length} hábitos`}
+              />
 
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <h2 className="ios-title text-[15px] font-semibold">Hábitos del día</h2>
-                    {completedCount === CONFIG.habits.length && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(52,199,89,0.12)] px-2 py-1 text-xs font-semibold text-[var(--color-success)]">
-                        <Check size={14} /> Completo
-                      </span>
-                    )}
-                  </div>
-                  <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-                    {completedCount} de {CONFIG.habits.length} hábitos
-                  </p>
-
-                  <div className="mt-3 flex items-end justify-between">
-                    <div>
-                      <div className="text-xs text-[var(--color-text-muted)]">Puntos totales</div>
-                      <div className="ios-title text-2xl font-semibold">{animatedPoints}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-xs text-[var(--color-text-muted)]">Racha</div>
-                      <div className="ios-title text-xl font-semibold text-[var(--color-warning)]">🔥 {streak}</div>
-                    </div>
-                  </div>
+              <div className="mt-4 flex items-center justify-between">
+                <div className="text-[16px] text-[var(--color-text-muted)]">Racha</div>
+                <div className="text-[18px] font-semibold text-[var(--color-warning)]">
+                  🔥 {streak}
                 </div>
               </div>
-            </Card>
+            </div>
 
-            {/* Habits */}
-            <Card className="overflow-hidden">
-              <div className="px-4 pt-4 pb-2">
-                <h3 className="ios-title text-[15px] font-semibold">Retos</h3>
-                <p className="text-sm text-[var(--color-text-muted)]">Marca lo que completaste hoy</p>
-              </div>
-
-              <div className="divide-y divide-black/5">
-                {CONFIG.habits.map((habit: Habit) => (
-                  <HabitItem
+            <div className="mt-5 space-y-3">
+              {CONFIG.habits.map((habit: Habit) => {
+                const ui = HABIT_UI[habit.id];
+                return (
+                  <HabitCard
                     key={habit.id}
                     emoji={habit.emoji}
                     title={habit.name}
+                    subtitle={ui?.subtitle ?? 'Completa el hábito'}
+                    background={ui?.background ?? '#FFFFFF'}
+                    iconBackground={ui?.iconBackground ?? 'rgba(0,0,0,0.06)'}
                     checked={habits[habit.id] || false}
-                    onChange={() => handleHabitToggle(habit.id)}
+                    onToggle={() => handleHabitToggle(habit.id)}
                   />
-                ))}
-              </div>
+                );
+              })}
+            </div>
 
-              <div className="h-3" />
-            </Card>
-
-            <StreakCard streak={streak} />
-
-            {/* Calendar */}
-            <Card className="p-4">
-              <div className="flex items-center justify-between">
-                <h3 className="ios-title text-[15px] font-semibold">Calendario</h3>
-                <span className="text-xs text-[var(--color-text-muted)]">{CONFIG.totalDays} días</span>
-              </div>
-              <div className="mt-4">
-                <CalendarGrid entries={entries} />
-              </div>
-            </Card>
+            <div className="h-24" />
           </>
         )}
       </main>
 
-      {/* Sticky save */}
-      <AnimateSaveBar
-        visible={!loading && hasChanges}
-        saving={saving}
-        onSave={handleSave}
-      />
+      <motion.div
+        initial={false}
+        animate={{ y: 0, opacity: 1 }}
+        className="fixed bottom-[84px] left-0 right-0 z-40 px-5"
+      >
+        <div className="mx-auto max-w-[430px]">
+          <button
+            onClick={handleSave}
+            disabled={saving || loading}
+            className="w-full h-14 rounded-2xl bg-[#007AFF] text-white font-semibold shadow-[var(--shadow)] disabled:opacity-60"
+          >
+            {saving ? 'Guardando…' : '💾 Guardar Día'}
+          </button>
+        </div>
+      </motion.div>
 
       <BottomNav />
     </div>
-  );
-}
-
-function AnimateSaveBar({
-  visible,
-  saving,
-  onSave,
-}: {
-  visible: boolean;
-  saving: boolean;
-  onSave: () => void;
-}) {
-  return (
-    <motion.div
-      initial={false}
-      animate={{ y: visible ? 0 : 90, opacity: visible ? 1 : 0 }}
-      transition={{ duration: 0.2 }}
-      className="fixed bottom-[84px] left-0 right-0 z-40 px-4"
-    >
-      <div className="mx-auto max-w-md">
-        <div className="rounded-2xl border border-black/10 bg-white/80 p-2 shadow-[var(--shadow)] backdrop-blur-xl">
-          <Button className="w-full" onClick={onSave} disabled={saving} loading={saving}>
-            Guardar día
-          </Button>
-        </div>
-      </div>
-    </motion.div>
   );
 }

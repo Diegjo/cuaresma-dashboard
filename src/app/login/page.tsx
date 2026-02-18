@@ -11,9 +11,6 @@ import {
   getUserCount,
   isValidPin,
 } from '@/lib/storage';
-import { Card } from '@/components/ui/Card';
-import { Input } from '@/components/ui/Input';
-import { Button } from '@/components/ui/Button';
 
 type LoginStep = 'pin' | 'register';
 
@@ -24,8 +21,8 @@ const MAX_PIN = 1015;
 function Toast({ message }: { message: string }) {
   if (!message) return null;
   return (
-    <div className="fixed left-0 right-0 top-3 z-50 px-4">
-      <div className="mx-auto max-w-md">
+    <div className="fixed left-0 right-0 top-3 z-50 px-5">
+      <div className="mx-auto max-w-[430px]">
         <div className="animate-toastIn rounded-2xl bg-white/90 px-4 py-3 text-sm text-[var(--color-text)] shadow-[var(--shadow)] backdrop-blur-xl border border-black/10">
           {message}
         </div>
@@ -127,118 +124,126 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen px-4 py-10 flex items-center">
+    <div className="min-h-screen px-5 py-10 flex items-center">
       <Toast message={toast} />
 
-      <div className="w-full">
+      <div className="mx-auto w-full max-w-[430px]">
         <div className="text-center">
-          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-3xl bg-white shadow-[var(--shadow)]">
-            <span className="text-3xl">🙏</span>
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-[24px] bg-white shadow-[var(--shadow)] border border-black/5">
+            <span className="text-[48px] leading-none">✝️</span>
           </div>
-          <h1 className="ios-title text-2xl font-semibold text-[var(--color-text)]">
-            {CONFIG.appName}
+
+          <h1 className="ios-title text-[24px] font-semibold text-[var(--color-text)]">
+            Reto de Cuaresma
           </h1>
-          <p className="mt-1 text-sm text-[var(--color-text-muted)]">Bienvenido</p>
+          <p className="mt-1 text-[15px] text-[var(--color-text-muted)]">Entra con tu PIN</p>
         </div>
 
-        <div className="mt-8">
-          <Card className="p-5">
-            <AnimatePresence mode="wait">
-              {step === 'pin' ? (
-                <motion.form
-                  key="pin"
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.2 }}
-                  onSubmit={handlePinSubmit}
-                  className="space-y-4"
-                >
-                  <div>
-                    <label className="text-sm font-medium text-[var(--color-text)]">PIN</label>
-                    <div className={`mt-2 ${shake ? 'animate-shake' : ''}`}>
-                      <Input
-                        type="password"
-                        value={pin}
-                        onChange={(e) => setPin(e.target.value)}
-                        placeholder={pinHelp}
-                        maxLength={4}
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        className="text-center text-lg tracking-widest"
-                        autoFocus
-                      />
-                    </div>
-                    <p className="mt-2 text-center text-xs text-[var(--color-text-muted)]">
-                      PINs válidos: {MIN_PIN} – {MAX_PIN}
-                    </p>
+        <div className="mt-10">
+          <AnimatePresence mode="wait">
+            {step === 'pin' ? (
+              <motion.form
+                key="pin"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2 }}
+                onSubmit={handlePinSubmit}
+                className="space-y-4"
+              >
+                <div>
+                  <label className="text-sm font-semibold text-[var(--color-text)]">PIN</label>
+                  <div className={`mt-2 ${shake ? 'animate-shake' : ''}`}>
+                    <input
+                      type="password"
+                      value={pin}
+                      onChange={(e) => setPin(e.target.value)}
+                      placeholder={pinHelp}
+                      maxLength={4}
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      className="w-full h-14 rounded-xl bg-white border border-black/10 px-4 text-center text-lg tracking-widest shadow-[0_1px_0_rgba(0,0,0,0.04)] focus:outline-none focus:ring-4 focus:ring-[rgba(0,122,255,0.18)]"
+                      autoFocus
+                    />
                   </div>
-
-                  <Button type="submit" className="w-full" loading={loading} disabled={loading}>
-                    Continuar
-                  </Button>
-
-                  <p className="text-center text-xs text-[var(--color-text-muted)]">
-                    {userCount} de {MAX_USERS} registrados
+                  <p className="mt-2 text-center text-xs text-[var(--color-text-muted)]">
+                    PINs válidos: {MIN_PIN} – {MAX_PIN}
                   </p>
-                </motion.form>
-              ) : (
-                <motion.form
-                  key="register"
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.2 }}
-                  onSubmit={handleRegisterSubmit}
-                  className="space-y-4"
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full h-14 rounded-xl bg-[#007AFF] text-white font-semibold shadow-[var(--shadow)] disabled:opacity-60"
                 >
-                  <div className="text-center">
-                    <div className="inline-flex items-center rounded-full bg-black/5 px-3 py-1 text-sm text-[var(--color-text-muted)]">
-                      PIN: <span className="ml-1 font-semibold text-[var(--color-text)]">{pin}</span>
-                    </div>
-                    <p className="mt-2 text-xs text-[var(--color-text-muted)]">
-                      Ingresa tu nombre para registrarte
-                    </p>
+                  {loading ? 'Entrando…' : 'Continuar'}
+                </button>
+
+                <p className="text-center text-xs text-[var(--color-text-muted)]">
+                  {userCount} de {MAX_USERS} registrados
+                </p>
+
+                <p className="pt-2 text-center text-xs text-[var(--color-text-muted)]">
+                  {CONFIG.appName}
+                </p>
+              </motion.form>
+            ) : (
+              <motion.form
+                key="register"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2 }}
+                onSubmit={handleRegisterSubmit}
+                className="space-y-4"
+              >
+                <div className="text-center">
+                  <div className="inline-flex items-center rounded-full bg-black/5 px-3 py-1 text-sm text-[var(--color-text-muted)]">
+                    PIN:{' '}
+                    <span className="ml-1 font-semibold text-[var(--color-text)]">{pin}</span>
                   </div>
-
-                  <div>
-                    <label className="text-sm font-medium text-[var(--color-text)]">Nombre</label>
-                    <div className="mt-2">
-                      <Input
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="Tu nombre"
-                        maxLength={30}
-                        autoFocus
-                      />
-                    </div>
-                  </div>
-
-                  <Button type="submit" className="w-full" loading={loading} disabled={loading}>
-                    Crear cuenta y entrar
-                  </Button>
-
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    className="w-full"
-                    onClick={back}
-                    disabled={loading}
-                  >
-                    Volver
-                  </Button>
-
-                  <p className="text-center text-xs text-[var(--color-text-muted)]">
-                    {remainingSlots} de {MAX_USERS} lugares disponibles
+                  <p className="mt-3 text-[15px] text-[var(--color-text-muted)]">
+                    Ingresa tu nombre para registrarte
                   </p>
-                </motion.form>
-              )}
-            </AnimatePresence>
-          </Card>
+                </div>
 
-          <p className="mt-6 text-center text-xs text-[var(--color-text-muted)]">
-            Solo para participantes registrados
-          </p>
+                <div>
+                  <label className="text-sm font-semibold text-[var(--color-text)]">Nombre</label>
+                  <div className="mt-2">
+                    <input
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Tu nombre"
+                      maxLength={30}
+                      autoFocus
+                      className="w-full h-14 rounded-xl bg-white border border-black/10 px-4 text-[16px] shadow-[0_1px_0_rgba(0,0,0,0.04)] focus:outline-none focus:ring-4 focus:ring-[rgba(0,122,255,0.18)]"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full h-14 rounded-xl bg-[#007AFF] text-white font-semibold shadow-[var(--shadow)] disabled:opacity-60"
+                >
+                  {loading ? 'Creando…' : 'Crear cuenta y entrar'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={back}
+                  disabled={loading}
+                  className="w-full h-14 rounded-xl bg-white text-[var(--color-text)] font-semibold border border-black/10"
+                >
+                  Volver
+                </button>
+
+                <p className="text-center text-xs text-[var(--color-text-muted)]">
+                  {remainingSlots} de {MAX_USERS} lugares disponibles
+                </p>
+              </motion.form>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </div>

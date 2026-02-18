@@ -27,7 +27,10 @@
   --color-warning: var(--warning);
 }
 
-html, body { height: 100%; }
+html,
+body {
+  height: 100%;
+}
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
@@ -36,7 +39,10 @@ body {
 }
 
 /* Subtle iOS-like text rendering */
-* { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
 
 .ios-title {
   letter-spacing: -0.01em;
@@ -44,57 +50,54 @@ body {
 
 /* Animations */
 @keyframes toastIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0px); }
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0px);
+  }
 }
 
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  20% { transform: translateX(-6px); }
-  40% { transform: translateX(6px); }
-  60% { transform: translateX(-4px); }
-  80% { transform: translateX(4px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-6px);
+  }
+  40% {
+    transform: translateX(6px);
+  }
+  60% {
+    transform: translateX(-4px);
+  }
+  80% {
+    transform: translateX(4px);
+  }
 }
 
-.animate-toastIn { animation: toastIn 200ms ease-out; }
-.animate-shake { animation: shake 320ms ease-in-out; }
-
-/* iOS-like switch */
-.ios-switch {
-  --h: 28px;
-  --w: 46px;
-  appearance: none;
-  width: var(--w);
-  height: var(--h);
-  border-radius: 999px;
-  background: rgba(120,120,128,0.16);
-  position: relative;
-  outline: none;
-  cursor: pointer;
-  transition: background 150ms ease;
+.animate-toastIn {
+  animation: toastIn 200ms ease-out;
 }
 
-.ios-switch::after {
-  content: '';
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: calc(var(--h) - 4px);
-  height: calc(var(--h) - 4px);
-  border-radius: 999px;
-  background: #fff;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.18);
-  transition: transform 150ms ease;
-}
-
-.ios-switch:checked {
-  background: var(--success);
-}
-
-.ios-switch:checked::after {
-  transform: translateX(calc(var(--w) - var(--h)));
+.animate-shake {
+  animation: shake 320ms ease-in-out;
 }
 
 /* Press feedback */
-.pressable { transition: transform 120ms ease; }
-.pressable:active { transform: scale(0.98); }
+.pressable {
+  transition: transform 120ms ease;
+}
+
+.pressable:active {
+  transform: scale(0.98);
+}
+
+/* Safer tap highlight */
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
