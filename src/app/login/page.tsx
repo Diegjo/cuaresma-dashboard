@@ -1,243 +1,245 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { AnimatePresence, motion } from 'framer-motion';
 import { CONFIG } from '@/lib/config';
-import { 
-  checkUserByPin, 
-  createUser, 
-  setCurrentUser, 
+import {
+  checkUserByPin,
+  createUser,
+  setCurrentUser,
   getUserCount,
-  isValidPin 
+  isValidPin,
 } from '@/lib/storage';
+import { Card } from '@/components/ui/Card';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
 
-type LoginStep = 'pin' | 'register' | 'loading';
+type LoginStep = 'pin' | 'register';
 
 const MAX_USERS = 15;
 const MIN_PIN = 1001;
 const MAX_PIN = 1015;
+
+function Toast({ message }: { message: string }) {
+  if (!message) return null;
+  return (
+    <div className="fixed left-0 right-0 top-3 z-50 px-4">
+      <div className="mx-auto max-w-md">
+        <div className="animate-toastIn rounded-2xl bg-white/90 px-4 py-3 text-sm text-[var(--color-text)] shadow-[var(--shadow)] backdrop-blur-xl border border-black/10">
+          {message}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function LoginPage() {
   const router = useRouter();
   const [step, setStep] = useState<LoginStep>('pin');
   const [pin, setPin] = useState('');
   const [name, setName] = useState('');
-  const [error, setError] = useState('');
+  const [toast, setToast] = useState('');
   const [loading, setLoading] = useState(false);
   const [userCount, setUserCount] = useState(0);
+  const [shake, setShake] = useState(false);
 
-  // Cargar conteo de usuarios al montar el componente
   useEffect(() => {
-    const loadUserCount = async () => {
-      const count = await getUserCount();
-      setUserCount(count);
-    };
-    loadUserCount();
+    getUserCount().then(setUserCount);
   }, []);
 
-  // Paso 1: Verificar PIN
-  const handlePinSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-
-    // Validar formato del PIN
-    if (!isValidPin(pin)) {
-      setError(`PIN inválido. Debe ser un número entre ${MIN_PIN} y ${MAX_PIN}`);
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      // Verificar si el PIN ya está registrado
-      const existingUser = await checkUserByPin(pin);
-
-      if (existingUser) {
-        // PIN existe → Login normal
-        setCurrentUser(existingUser);
-        router.push('/dashboard');
-      } else {
-        // PIN nuevo → Ir a registro
-        const count = await getUserCount();
-        if (count >= MAX_USERS) {
-          setError('Ya se alcanzó el límite máximo de 15 participantes');
-          setLoading(false);
-          return;
-        }
-        setUserCount(count);
-        setStep('register');
-        setLoading(false);
-      }
-    } catch (err) {
-      setError('Error al conectar con el servidor');
-      setLoading(false);
-    }
-  };
-
-  // Paso 2: Crear cuenta con nombre
-  const handleRegisterSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-
-    // Validar nombre
-    if (!name.trim()) {
-      setError('Por favor ingresa tu nombre');
-      return;
-    }
-
-    if (name.trim().length < 2) {
-      setError('El nombre debe tener al menos 2 caracteres');
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      // Crear nuevo usuario
-      const newUser = await createUser(pin, name.trim());
-
-      if (newUser) {
-        setCurrentUser(newUser);
-        router.push('/dashboard');
-      } else {
-        setError('Error al crear la cuenta. Inténtalo de nuevo.');
-        setLoading(false);
-      }
-    } catch (err) {
-      setError('Error al conectar con el servidor');
-      setLoading(false);
-    }
-  };
-
-  // Volver al paso anterior
-  const handleBack = () => {
-    setStep('pin');
-    setName('');
-    setError('');
-  };
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(''), 2400);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   const remainingSlots = MAX_USERS - userCount;
 
+  const pinHelp = useMemo(() => `Ingresa tu PIN (${MIN_PIN}-${MAX_PIN})`, []);
+
+  const handlePinSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setToast('');
+
+    if (!isValidPin(pin)) {
+      setShake(true);
+      setTimeout(() => setShake(false), 350);
+      setToast(`PIN inválido. Debe ser un número entre ${MIN_PIN} y ${MAX_PIN}.`);
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const existingUser = await checkUserByPin(pin);
+      if (existingUser) {
+        setCurrentUser(existingUser);
+        router.push('/dashboard');
+        return;
+      }
+
+      const count = await getUserCount();
+      if (count >= MAX_USERS) {
+        setToast('Ya se alcanzó el límite máximo de 15 participantes.');
+        setLoading(false);
+        return;
+      }
+
+      setUserCount(count);
+      setStep('register');
+      setLoading(false);
+    } catch {
+      setToast('Error al conectar con el servidor.');
+      setLoading(false);
+    }
+  };
+
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setToast('');
+
+    if (!name.trim() || name.trim().length < 2) {
+      setToast('Ingresa tu nombre (mínimo 2 caracteres).');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const newUser = await createUser(pin, name.trim());
+      if (!newUser) {
+        setToast('Error al crear la cuenta. Inténtalo de nuevo.');
+        setLoading(false);
+        return;
+      }
+      setCurrentUser(newUser);
+      router.push('/dashboard');
+    } catch {
+      setToast('Error al conectar con el servidor.');
+      setLoading(false);
+    }
+  };
+
+  const back = () => {
+    setStep('pin');
+    setName('');
+    setToast('');
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="w-full max-w-sm animate-fadeIn">
-        {/* Logo / Título */}
-        <div className="text-center mb-8">
-          <div className="text-5xl mb-4">📿</div>
-          <h1 className="text-2xl font-semibold text-gray-900 mb-2">
+    <div className="min-h-screen px-4 py-10 flex items-center">
+      <Toast message={toast} />
+
+      <div className="w-full">
+        <div className="text-center">
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-3xl bg-white shadow-[var(--shadow)]">
+            <span className="text-3xl">🙏</span>
+          </div>
+          <h1 className="ios-title text-2xl font-semibold text-[var(--color-text)]">
             {CONFIG.appName}
           </h1>
-          <p className="text-gray-500 text-sm">
-            40 días · 15 amigos · 7 hábitos
+          <p className="mt-1 text-sm text-[var(--color-text-muted)]">Bienvenido</p>
+        </div>
+
+        <div className="mt-8">
+          <Card className="p-5">
+            <AnimatePresence mode="wait">
+              {step === 'pin' ? (
+                <motion.form
+                  key="pin"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.2 }}
+                  onSubmit={handlePinSubmit}
+                  className="space-y-4"
+                >
+                  <div>
+                    <label className="text-sm font-medium text-[var(--color-text)]">PIN</label>
+                    <div className={`mt-2 ${shake ? 'animate-shake' : ''}`}>
+                      <Input
+                        type="password"
+                        value={pin}
+                        onChange={(e) => setPin(e.target.value)}
+                        placeholder={pinHelp}
+                        maxLength={4}
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        className="text-center text-lg tracking-widest"
+                        autoFocus
+                      />
+                    </div>
+                    <p className="mt-2 text-center text-xs text-[var(--color-text-muted)]">
+                      PINs válidos: {MIN_PIN} – {MAX_PIN}
+                    </p>
+                  </div>
+
+                  <Button type="submit" className="w-full" loading={loading} disabled={loading}>
+                    Continuar
+                  </Button>
+
+                  <p className="text-center text-xs text-[var(--color-text-muted)]">
+                    {userCount} de {MAX_USERS} registrados
+                  </p>
+                </motion.form>
+              ) : (
+                <motion.form
+                  key="register"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.2 }}
+                  onSubmit={handleRegisterSubmit}
+                  className="space-y-4"
+                >
+                  <div className="text-center">
+                    <div className="inline-flex items-center rounded-full bg-black/5 px-3 py-1 text-sm text-[var(--color-text-muted)]">
+                      PIN: <span className="ml-1 font-semibold text-[var(--color-text)]">{pin}</span>
+                    </div>
+                    <p className="mt-2 text-xs text-[var(--color-text-muted)]">
+                      Ingresa tu nombre para registrarte
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-[var(--color-text)]">Nombre</label>
+                    <div className="mt-2">
+                      <Input
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Tu nombre"
+                        maxLength={30}
+                        autoFocus
+                      />
+                    </div>
+                  </div>
+
+                  <Button type="submit" className="w-full" loading={loading} disabled={loading}>
+                    Crear cuenta y entrar
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="w-full"
+                    onClick={back}
+                    disabled={loading}
+                  >
+                    Volver
+                  </Button>
+
+                  <p className="text-center text-xs text-[var(--color-text-muted)]">
+                    {remainingSlots} de {MAX_USERS} lugares disponibles
+                  </p>
+                </motion.form>
+              )}
+            </AnimatePresence>
+          </Card>
+
+          <p className="mt-6 text-center text-xs text-[var(--color-text-muted)]">
+            Solo para participantes registrados
           </p>
         </div>
-
-        {/* Formulario */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-          {step === 'pin' && (
-            /* Paso 1: Ingresar PIN */
-            <form onSubmit={handlePinSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Ingresa tu PIN
-                </label>
-                <input
-                  type="password"
-                  value={pin}
-                  onChange={(e) => setPin(e.target.value)}
-                  placeholder="••••"
-                  maxLength={4}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-violet-500 focus:border-violet-500 outline-none transition-all text-center text-lg tracking-widest"
-                  required
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                />
-                <p className="text-xs text-gray-400 mt-2 text-center">
-                  PINs válidos: {MIN_PIN} - {MAX_PIN}
-                </p>
-              </div>
-
-              {error && (
-                <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg">
-                  {error}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-violet-600 hover:bg-violet-700 text-white font-medium py-3 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Verificando...' : 'Continuar'}
-              </button>
-
-              <p className="text-center text-gray-400 text-xs">
-                {userCount} de {MAX_USERS} amigos registrados
-              </p>
-            </form>
-          )}
-
-          {step === 'register' && (
-            /* Paso 2: Crear cuenta (PIN nuevo) */
-            <form onSubmit={handleRegisterSubmit} className="space-y-4">
-              <div className="text-center mb-4">
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
-                  PIN: {pin} (nuevo)
-                </span>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  ¿Cómo te llamas?
-                </label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Tu nombre"
-                  maxLength={30}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-violet-500 focus:border-violet-500 outline-none transition-all"
-                  required
-                  autoFocus
-                />
-              </div>
-
-              {error && (
-                <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg">
-                  {error}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-violet-600 hover:bg-violet-700 text-white font-medium py-3 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Creando cuenta...' : 'Crear cuenta y entrar'}
-              </button>
-
-              <button
-                type="button"
-                onClick={handleBack}
-                disabled={loading}
-                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 rounded-xl transition-colors disabled:opacity-50"
-              >
-                Volver
-              </button>
-
-              <div className="text-center">
-                <p className="text-xs text-amber-600">
-                  ⚠️ Solo quedan {remainingSlots} lugar{remainingSlots !== 1 ? 'es' : ''} de {MAX_USERS}
-                </p>
-              </div>
-            </form>
-          )}
-        </div>
-
-        {/* Ayuda */}
-        <p className="text-center text-gray-400 text-xs mt-6">
-          Solo para participantes registrados
-        </p>
       </div>
     </div>
   );

@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CONFIG } from '@/lib/config';
+import { motion } from 'framer-motion';
+import { Trophy } from 'lucide-react';
 import {
   getCurrentUser,
   clearCurrentUser,
@@ -10,6 +11,24 @@ import {
   LeaderboardEntry,
   User,
 } from '@/lib/storage';
+import { Card } from '@/components/ui/Card';
+import { BottomNav } from '@/components/BottomNav';
+
+function initials(name: string) {
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase())
+    .join('');
+}
+
+function colorFor(id: string) {
+  // deterministic pleasant pastel
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) % 360;
+  return `hsl(${h} 70% 92%)`;
+}
 
 export default function LeaderboardPage() {
   const router = useRouter();
@@ -24,10 +43,11 @@ export default function LeaderboardPage() {
       return;
     }
     setUser(currentUser);
-    loadLeaderboard();
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
-  const loadLeaderboard = async () => {
+  const load = async () => {
     setLoading(true);
     const data = await getLeaderboard();
     setLeaderboard(data);
@@ -39,150 +59,124 @@ export default function LeaderboardPage() {
     router.push('/login');
   };
 
+  const top3 = useMemo(() => leaderboard.slice(0, 3), [leaderboard]);
+
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-4 py-4 sticky top-0 z-10">
-        <div className="max-w-md mx-auto flex items-center justify-between">
+    <div className="min-h-screen pb-28">
+      <header className="px-4 pt-6">
+        <div className="flex items-start justify-between">
           <div>
-            <h1 className="font-semibold text-gray-900">Leaderboard</h1>
-            <p className="text-xs text-gray-500">
-              {leaderboard.length} participantes
-            </p>
+            <p className="text-sm text-[var(--color-text-muted)]">Ranking</p>
+            <h1 className="ios-title mt-1 text-xl font-semibold">Tabla</h1>
           </div>
-          <div className="flex items-center gap-3">
-            <a
-              href="/dashboard"
-              className="text-sm text-violet-600 hover:text-violet-700 font-medium"
-            >
-              Mi progreso
-            </a>
-            <button
-              onClick={handleLogout}
-              className="text-xs text-gray-400 hover:text-gray-600"
-            >
-              Salir
-            </button>
-          </div>
+          <button onClick={handleLogout} className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white shadow-[var(--shadow)] border border-black/5">
+              <span className="text-sm font-semibold">{initials(user.name)}</span>
+            </div>
+          </button>
         </div>
       </header>
 
-      <main className="max-w-md mx-auto p-4">
+      <main className="px-4 pt-4 space-y-4">
         {loading ? (
-          <div className="text-center py-8 text-gray-500">Cargando...</div>
+          <div className="py-10 text-center text-sm text-[var(--color-text-muted)]">Cargando…</div>
         ) : (
           <>
-            {/* Podio */}
-            {leaderboard.length >= 3 && (
-              <div className="flex items-end justify-center gap-2 mb-6 pt-4">
-                {/* 2do lugar */}
-                <div className="flex flex-col items-center">
-                  <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center text-2xl mb-2">
-                    🥈
-                  </div>
-                  <div className="bg-white rounded-xl border border-gray-200 p-3 w-24 text-center">
-                    <div className="font-semibold text-sm truncate">
-                      {leaderboard[1].name}
-                    </div>
-                    <div className="text-lg font-bold text-gray-700">
-                      {leaderboard[1].total_points}
-                    </div>
-                    <div className="text-xs text-orange-500">
-                      🔥 {leaderboard[1].current_streak}
-                    </div>
-                  </div>
+            {leaderboard.length > 0 && (
+              <Card className="p-4">
+                <div className="flex items-center gap-2">
+                  <Trophy size={18} />
+                  <h2 className="ios-title text-[15px] font-semibold">Top 3</h2>
                 </div>
 
-                {/* 1er lugar */}
-                <div className="flex flex-col items-center -mt-4">
-                  <div className="w-20 h-20 rounded-full bg-yellow-100 flex items-center justify-center text-3xl mb-2 border-4 border-yellow-300">
-                    🥇
-                  </div>
-                  <div className="bg-violet-600 rounded-xl border border-violet-600 p-4 w-28 text-center text-white">
-                    <div className="font-semibold text-sm truncate">
-                      {leaderboard[0].name}
-                    </div>
-                    <div className="text-2xl font-bold">{leaderboard[0].total_points}</div>
-                    <div className="text-xs text-violet-200">
-                      🔥 {leaderboard[0].current_streak}
-                    </div>
-                  </div>
+                <div className="mt-4 grid grid-cols-3 gap-3 items-end">
+                  {[1, 0, 2].map((idx, i) => {
+                    const p = top3[idx];
+                    if (!p) return <div key={i} />;
+                    const isFirst = idx === 0;
+                    const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉';
+                    return (
+                      <motion.div
+                        key={p.id}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.2, delay: i * 0.05 }}
+                        className={`${isFirst ? 'pt-0' : 'pt-4'}`}
+                      >
+                        <div className="text-center">
+                          <div
+                            className={`mx-auto flex items-center justify-center rounded-full border border-black/5 shadow-[var(--shadow)] ${
+                              isFirst ? 'h-16 w-16 text-2xl' : 'h-12 w-12 text-xl'
+                            }`}
+                            style={{ background: colorFor(p.id) }}
+                          >
+                            {medal}
+                          </div>
+                          <div className="mt-2 text-sm font-semibold truncate">{p.name}</div>
+                          <div className="ios-title text-xl font-semibold">{p.total_points}</div>
+                          <div className="text-xs text-[var(--color-warning)]">🔥 {p.current_streak}</div>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
                 </div>
-
-                {/* 3er lugar */}
-                <div className="flex flex-col items-center">
-                  <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center text-2xl mb-2">
-                    🥉
-                  </div>
-                  <div className="bg-white rounded-xl border border-gray-200 p-3 w-24 text-center">
-                    <div className="font-semibold text-sm truncate">
-                      {leaderboard[2].name}
-                    </div>
-                    <div className="text-lg font-bold text-gray-700">
-                      {leaderboard[2].total_points}
-                    </div>
-                    <div className="text-xs text-orange-500">
-                      🔥 {leaderboard[2].current_streak}
-                    </div>
-                  </div>
-                </div>
-              </div>
+              </Card>
             )}
 
-            {/* Lista completa */}
-            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-              <div className="p-4 border-b border-gray-100 bg-gray-50">
-                <div className="flex text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <span className="w-8">#</span>
-                  <span className="flex-1">Participante</span>
-                  <span className="w-16 text-center">Puntos</span>
-                  <span className="w-12 text-center">Racha</span>
+            <Card className="overflow-hidden">
+              <div className="px-4 py-3 border-b border-black/5 bg-white/60">
+                <div className="flex text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
+                  <span className="w-10">#</span>
+                  <span className="flex-1">Persona</span>
+                  <span className="w-16 text-right">Puntos</span>
                 </div>
               </div>
 
-              <div className="divide-y divide-gray-100">
-                {leaderboard.map((participant, index) => (
-                  <div
-                    key={participant.id}
-                    className={`p-4 flex items-center ${
-                      participant.id === user.id ? 'bg-violet-50' : ''
-                    }`}
-                  >
-                    <span className="w-8 text-sm font-medium text-gray-500">
-                      {index + 1}
-                    </span>
-                    <div className="flex-1">
-                      <span className="font-medium text-gray-900">
-                        {participant.name}
-                        {participant.id === user.id && (
-                          <span className="ml-2 text-xs bg-violet-200 text-violet-700 px-2 py-0.5 rounded-full">
-                            Tú
-                          </span>
-                        )}
-                      </span>
-                    </div>
-                    <span className="w-16 text-center font-semibold text-gray-900">
-                      {participant.total_points}
-                    </span>
-                    <span className="w-12 text-center text-sm text-orange-500">
-                      {participant.current_streak > 0
-                        ? `🔥 ${participant.current_streak}`
-                        : '-'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
+              <div className="divide-y divide-black/5">
+                {leaderboard.map((p, idx) => {
+                  const me = p.id === user.id;
+                  return (
+                    <div key={p.id} className={`px-4 py-3 flex items-center gap-3 ${me ? 'bg-[rgba(0,122,255,0.06)]' : ''}`}>
+                      <div className="w-10 text-sm font-semibold text-[var(--color-text-muted)]">{idx + 1}</div>
 
-            {/* Leyenda */}
-            <p className="text-center text-xs text-gray-400 mt-4">
-              Actualizado en tiempo real desde la base de datos
+                      <div
+                        className="h-9 w-9 rounded-full flex items-center justify-center border border-black/5"
+                        style={{ background: colorFor(p.id) }}
+                      >
+                        <span className="text-xs font-semibold">{initials(p.name)}</span>
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <div className="truncate text-sm font-semibold">{p.name}</div>
+                          {me && (
+                            <span className="rounded-full bg-[rgba(0,122,255,0.12)] px-2 py-0.5 text-[11px] font-semibold text-[var(--color-accent)]">
+                              Tú
+                            </span>
+                          )}
+                        </div>
+                        {p.current_streak > 0 && (
+                          <div className="mt-0.5 text-xs text-[var(--color-warning)]">🔥 Racha {p.current_streak}</div>
+                        )}
+                      </div>
+
+                      <div className="w-16 text-right ios-title text-sm font-semibold">{p.total_points}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </Card>
+
+            <p className="text-center text-xs text-[var(--color-text-muted)]">
+              Actualizado desde la base de datos
             </p>
           </>
         )}
       </main>
+
+      <BottomNav />
     </div>
   );
 }
