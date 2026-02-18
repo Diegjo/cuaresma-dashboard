@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CONFIG } from '@/lib/config';
-import { setCurrentUser } from '@/lib/storage';
+import { loginUser, setCurrentUser } from '@/lib/storage';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -12,21 +12,24 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    // Buscar usuario
-    const user = CONFIG.participants.find(
-      (p) => p.name.toLowerCase() === name.toLowerCase() && p.pin === pin
-    );
+    try {
+      // Buscar usuario en Supabase
+      const user = await loginUser(name, pin);
 
-    if (user) {
-      setCurrentUser(user);
-      router.push('/dashboard');
-    } else {
-      setError('Nombre o PIN incorrectos');
+      if (user) {
+        setCurrentUser(user);
+        router.push('/dashboard');
+      } else {
+        setError('Nombre o PIN incorrectos');
+        setLoading(false);
+      }
+    } catch (err) {
+      setError('Error al conectar con el servidor');
       setLoading(false);
     }
   };
