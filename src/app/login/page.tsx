@@ -134,7 +134,7 @@ export default function LoginPage() {
           </div>
 
           <h1 className="ios-title text-[24px] font-semibold text-[var(--color-text)]">
-            Reto de Cuaresma
+            Reto de Cuaresma - Finders
           </h1>
           <p className="mt-1 text-[15px] text-[var(--color-text-muted)]">Entra con tu PIN</p>
         </div>

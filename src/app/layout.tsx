@@ -5,7 +5,7 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Reto de Cuaresma',
+  title: 'Reto de Cuaresma - Finders',
   description: 'Dashboard de 40 días de retos espirituales',
 };
 

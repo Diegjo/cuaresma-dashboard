@@ -1,10 +1,10 @@
 /************************************
- * Configuración del Reto de Cuaresma
+ * Configuración del Reto de Cuaresma - Finders
  ************************************/
 
 export const CONFIG = {
   // Nombre del reto
-  appName: 'Reto de Cuaresma',
+  appName: 'Reto de Cuaresma - Finders',
   
   // Fechas del reto (40 días)
   startDate: '2025-03-05', // Miércoles de Ceniza

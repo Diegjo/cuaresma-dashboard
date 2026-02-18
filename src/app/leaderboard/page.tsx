@@ -53,7 +53,7 @@ export default function LeaderboardPage() {
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="text-center">
-              <div className="text-[24px] font-semibold tracking-wide">RANKING</div>
+              <div className="text-[24px] font-semibold tracking-wide">RANKING FINDERS</div>
               <div className="mt-1 text-[15px] text-[var(--color-text-muted)]">🏆 Cuaresma</div>
             </div>
           </div>
