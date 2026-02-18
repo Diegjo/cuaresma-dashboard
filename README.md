@@ -58,11 +58,13 @@ npm install
 cp .env.local.example .env.local
 ```
 
-Editar `.env.local` con tus credenciales:
+Editar `.env.local` con tus credenciales de Supabase:
 ```
-NEXT_PUBLIC_SUPABASE_URL=https://tu-proyecto.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-anon-key-aqui
+NEXT_PUBLIC_SUPABASE_URL=https://eboqurfvcdiqdwbhcqmx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVib3F1cmZ2Y2RpcWR3YmhjcW14Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzODcwMzcsImV4cCI6MjA4Njk2MzAzN30.UYLRxn4f6d7Kt8HZcKXdjvFJdZTGH4lJHyRp3BY348I
 ```
+
+**Nota:** Este proyecto ya tiene configurado un proyecto de Supabase. Si deseas usar tu propio proyecto, reemplaza las credenciales con las de tu proyecto.
 
 ### 6. Crear tablas en Supabase
 
@@ -113,9 +115,11 @@ gh repo create cuaresma-dashboard --public --source=. --remote=origin --push
 2. Clic en "Add New Project"
 3. Importa tu repositorio de GitHub
 4. En **Environment Variables**, agrega:
-   - `NEXT_PUBLIC_SUPABASE_URL` = tu URL de Supabase
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` = tu anon key
+   - `NEXT_PUBLIC_SUPABASE_URL` = `https://eboqurfvcdiqdwbhcqmx.supabase.co`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVib3F1cmZ2Y2RpcWR3YmhjcW14Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzODcwMzcsImV4cCI6MjA4Njk2MzAzN30.UYLRxn4f6d7Kt8HZcKXdjvFJdZTGH4lJHyRp3BY348I`
 5. Clic en "Deploy"
+
+**Importante:** Asegúrate de que las tablas estén creadas en Supabase antes de hacer deploy (ver paso 6 de Instalación).
 
 ## 📁 Estructura del proyecto
 

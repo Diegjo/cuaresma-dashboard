@@ -87,7 +87,13 @@ export default function DashboardPage() {
     const entry = {
       userId: user.id,
       date: today,
-      ...habits,
+      habit1: habits.habit1 || false,
+      habit2: habits.habit2 || false,
+      habit3: habits.habit3 || false,
+      habit4: habits.habit4 || false,
+      habit5: habits.habit5 || false,
+      habit6: habits.habit6 || false,
+      habit7: habits.habit7 || false,
       totalPoints: completedHabits,
     };
 

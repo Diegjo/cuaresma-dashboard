@@ -1,4 +1,8 @@
-import { supabase, User, DailyEntry } from './supabase';
+import { supabase } from './supabase';
+import type { User, DailyEntry } from './supabase';
+
+// Re-exportar tipos
+export type { User, DailyEntry };
 
 // LocalStorage keys (solo para sesión del usuario actual)
 const STORAGE_KEYS = {
