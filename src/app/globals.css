@@ -1,103 +1,140 @@
-/**************************
- * Cuaresma Dashboard CSS  *
- * Apple-like minimal UI   *
- **************************/
 @import "tailwindcss";
 
 :root {
-  --bg: #F5F5F7;
+  /* Base */
+  --bg: #FAFAFA;
+  --bg-subtle: #F4F4F5;
   --surface: #FFFFFF;
-  --text: #1D1D1F;
-  --muted: #86868B;
-  --border: rgba(0,0,0,0.08);
-  --accent: #007AFF;
-  --success: #34C759;
-  --warning: #FF9500;
-  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --surface-subtle: #FAFAFA;
+  
+  /* Text */
+  --text: #18181B;
+  --text-secondary: #71717A;
+  --text-tertiary: #A1A1AA;
+  --text-inverted: #FFFFFF;
+
+  /* Brand */
+  --primary: #18181B;
+  --primary-foreground: #FFFFFF;
+  
+  --accent: #6366F1;
+  --accent-foreground: #FFFFFF;
+  --accent-soft: #EEF2FF;
+
+  /* Functional */
+  --success: #10B981;
+  --success-soft: #ECFDF5;
+  --warning: #F59E0B;
+  --warning-soft: #FFFBEB;
+  --danger: #EF4444;
+  --danger-soft: #FEF2F2;
+
+  /* UI Elements */
+  --border: #E4E4E7;
+  --input: #E4E4E7;
+  --ring: #18181B;
+  
+  /* Radius */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
 }
 
 @theme {
   --color-bg: var(--bg);
+  --color-bg-subtle: var(--bg-subtle);
   --color-surface: var(--surface);
+  --color-surface-subtle: var(--surface-subtle);
+  
   --color-text: var(--text);
-  --color-text-muted: var(--muted);
-  --color-border: var(--border);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text-inverted: var(--text-inverted);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  
   --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-soft: var(--accent-soft);
+
   --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
   --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-full: var(--radius-full);
+  
+  --shadow-sm: var(--shadow-sm);
+  --shadow: var(--shadow);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
 }
 
-html,
-body {
+html, body {
   height: 100%;
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
-  background: var(--bg);
+  background: var(--bg-subtle);
   color: var(--text);
-}
-
-/* Subtle iOS-like text rendering */
-* {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-.ios-title {
-  letter-spacing: -0.01em;
+/* Utilities */
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(255, 255, 255, 0.5);
 }
 
-/* Animations */
-@keyframes toastIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0px);
-  }
+.press-effect {
+  transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.press-effect:active {
+  transform: scale(0.96);
 }
 
-@keyframes shake {
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-  20% {
-    transform: translateX(-6px);
-  }
-  40% {
-    transform: translateX(6px);
-  }
-  60% {
-    transform: translateX(-4px);
-  }
-  80% {
-    transform: translateX(4px);
-  }
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
 }
 
-.animate-toastIn {
-  animation: toastIn 200ms ease-out;
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.animate-shake {
-  animation: shake 320ms ease-in-out;
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
 }
-
-/* Press feedback */
-.pressable {
-  transition: transform 120ms ease;
+::-webkit-scrollbar-track {
+  background: transparent;
 }
-
-.pressable:active {
-  transform: scale(0.98);
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 99px;
 }
-
-/* Safer tap highlight */
-button,
-a {
-  -webkit-tap-highlight-color: transparent;
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
 }

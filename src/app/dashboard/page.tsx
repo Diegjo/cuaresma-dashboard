@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { CONFIG, Habit } from '@/lib/config';
 import {
   getCurrentUser,
@@ -13,51 +13,54 @@ import {
   saveEntry,
   calculateCurrentStreak,
   getUserEntries,
+  calculateTotalPoints,
   User,
   DailyEntry,
 } from '@/lib/storage';
-import { ProgressBar } from '@/components/ProgressBar';
+import { StatsGrid } from '@/components/StatsGrid';
 import { HabitCard } from '@/components/HabitCard';
 import { BottomNav } from '@/components/BottomNav';
+import { LogOut, Calendar } from 'lucide-react';
 
+// Use CSS variables via inline styles or tailwind classes
 const HABIT_UI: Record<
   string,
   { subtitle: string; background: string; iconBackground: string }
 > = {
   habit1: {
     subtitle: 'Entrenamiento o actividad física',
-    background: '#E8F4E8',
-    iconBackground: 'rgba(52,199,89,0.18)',
+    background: 'var(--surface)',
+    iconBackground: '#E0F2F1', // Teal 50
   },
   habit2: {
     subtitle: 'Comer más sano hoy',
-    background: '#FFF2E8',
-    iconBackground: 'rgba(255,149,0,0.18)',
+    background: 'var(--surface)',
+    iconBackground: '#FFF3E0', // Orange 50
   },
   habit3: {
     subtitle: 'Cuidar mente y corazón',
-    background: '#F0E8F4',
-    iconBackground: 'rgba(175,82,222,0.18)',
+    background: 'var(--surface)',
+    iconBackground: '#F3E5F5', // Purple 50
   },
   habit4: {
     subtitle: 'Levantarte temprano',
-    background: '#FFF9E8',
-    iconBackground: 'rgba(255,204,0,0.22)',
+    background: 'var(--surface)',
+    iconBackground: '#FFF8E1', // Amber 50
   },
   habit5: {
     subtitle: 'Leer y aprender',
-    background: '#E8F0F4',
-    iconBackground: 'rgba(90,200,250,0.22)',
+    background: 'var(--surface)',
+    iconBackground: '#E1F5FE', // Light Blue 50
   },
   habit6: {
     subtitle: 'Oración del día',
-    background: '#F4E8E8',
-    iconBackground: 'rgba(255,45,85,0.15)',
+    background: 'var(--surface)',
+    iconBackground: '#FFEBEE', // Red 50
   },
   habit7: {
     subtitle: 'Ofrecer un rosario',
-    background: '#E8E8F4',
-    iconBackground: 'rgba(99,102,241,0.20)',
+    background: 'var(--surface)',
+    iconBackground: '#E8EAF6', // Indigo 50
   },
 };
 
@@ -66,6 +69,7 @@ export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [habits, setHabits] = useState<Record<string, boolean>>({});
   const [streak, setStreak] = useState(0);
+  const [totalPoints, setTotalPoints] = useState(0);
   const [entries, setEntries] = useState<DailyEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -103,13 +107,15 @@ export default function DashboardPage() {
       setHabits(init);
     }
 
-    const [userStreak, userEntries] = await Promise.all([
+    const [userStreak, userEntries, points] = await Promise.all([
       calculateCurrentStreak(userId),
       getUserEntries(userId),
+      calculateTotalPoints(userId),
     ]);
 
     setStreak(userStreak);
     setEntries(userEntries);
+    setTotalPoints(points);
     setLoading(false);
   };
 
@@ -157,89 +163,131 @@ export default function DashboardPage() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen pb-28">
-      <header className="px-5 pt-7">
-        <div className="flex items-start justify-between">
+    <div className="min-h-screen pb-32 bg-[var(--bg-subtle)]">
+      {/* Header */}
+      <header className="px-6 pt-8 pb-4 bg-[var(--bg-subtle)] sticky top-0 z-20 backdrop-blur-md bg-opacity-90">
+        <div className="flex items-center justify-between">
           <div>
-            <div className="text-[22px] font-semibold text-[var(--color-text)]">
-              Hola, {user.name.split(' ')[0]}
+            <div className="flex items-center gap-2 text-[var(--text-secondary)] mb-1">
+              <Calendar size={14} />
+              <span className="text-xs font-medium uppercase tracking-wider">{dateLabel}</span>
             </div>
-            <div className="mt-1 text-[15px] text-[var(--color-text-muted)]">{dateLabel}</div>
+            <h1 className="text-2xl font-bold text-[var(--text)] tracking-tight">
+              Hola, {user.name.split(' ')[0]}
+            </h1>
           </div>
 
           <button
             onClick={handleLogout}
-            className="h-11 w-11 rounded-full bg-white border border-black/5 shadow-[var(--shadow)] flex items-center justify-center"
+            className="h-10 w-10 rounded-full bg-white border border-[var(--border)] shadow-sm flex items-center justify-center hover:bg-[var(--bg-subtle)] transition-colors text-[var(--text-secondary)] hover:text-[var(--text)]"
             aria-label="Cerrar sesión"
           >
-            <span className="text-sm font-semibold">
-              {user.name
-                .split(' ')
-                .slice(0, 2)
-                .map((p) => p[0]?.toUpperCase())
-                .join('')}
-            </span>
+            <LogOut size={18} />
           </button>
         </div>
       </header>
 
-      <main className="px-5 pt-5">
+      <main className="px-6 space-y-6">
         {loading ? (
-          <div className="py-12 text-center text-sm text-[var(--color-text-muted)]">Cargando…</div>
+          <div className="flex flex-col items-center justify-center py-20 space-y-4">
+             <div className="w-8 h-8 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin"></div>
+             <p className="text-sm text-[var(--text-secondary)]">Cargando tu progreso...</p>
+          </div>
         ) : (
-          <>
-            <div className="rounded-3xl bg-white shadow-[var(--shadow)] border border-black/5 p-5">
-              <ProgressBar
-                value={progressValue}
-                label={`${completedCount}/${CONFIG.habits.length} hábitos`}
-              />
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            <StatsGrid
+              progress={progressValue}
+              completedCount={completedCount}
+              totalHabits={CONFIG.habits.length}
+              streak={streak}
+              totalPoints={totalPoints}
+            />
 
-              <div className="mt-4 flex items-center justify-between">
-                <div className="text-[16px] text-[var(--color-text-muted)]">Racha</div>
-                <div className="text-[18px] font-semibold text-[var(--color-warning)]">
-                  🔥 {streak}
-                </div>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between px-1">
+                <h2 className="text-lg font-semibold text-[var(--text)]">Tus Hábitos</h2>
+                <span className="text-xs font-medium text-[var(--text-tertiary)] bg-[var(--surface)] px-2 py-1 rounded-full border border-[var(--border)]">
+                  {completedCount}/{CONFIG.habits.length}
+                </span>
+              </div>
+              
+              <div className="space-y-3">
+                <AnimatePresence>
+                  {CONFIG.habits.map((habit: Habit, index: number) => {
+                    const ui = HABIT_UI[habit.id];
+                    return (
+                      <motion.div
+                        key={habit.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                      >
+                        <HabitCard
+                          title={habit.name}
+                          subtitle={ui?.subtitle ?? 'Completa el hábito'}
+                          emoji={habit.emoji}
+                          background={ui?.background ?? '#FFFFFF'}
+                          iconBackground={ui?.iconBackground ?? '#F5F5F5'}
+                          checked={habits[habit.id] || false}
+                          onToggle={() => handleHabitToggle(habit.id)}
+                        />
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
               </div>
             </div>
-
-            <div className="mt-5 space-y-3">
-              {CONFIG.habits.map((habit: Habit) => {
-                const ui = HABIT_UI[habit.id];
-                return (
-                  <HabitCard
-                    key={habit.id}
-                    emoji={habit.emoji}
-                    title={habit.name}
-                    subtitle={ui?.subtitle ?? 'Completa el hábito'}
-                    background={ui?.background ?? '#FFFFFF'}
-                    iconBackground={ui?.iconBackground ?? 'rgba(0,0,0,0.06)'}
-                    checked={habits[habit.id] || false}
-                    onToggle={() => handleHabitToggle(habit.id)}
-                  />
-                );
-              })}
-            </div>
-
+            
             <div className="h-24" />
-          </>
+          </motion.div>
         )}
       </main>
 
-      <motion.div
-        initial={false}
-        animate={{ y: 0, opacity: 1 }}
-        className="fixed bottom-[84px] left-0 right-0 z-40 px-5"
-      >
-        <div className="mx-auto max-w-[430px]">
-          <button
-            onClick={handleSave}
-            disabled={saving || loading}
-            className="w-full h-14 rounded-2xl bg-[#007AFF] text-white font-semibold shadow-[var(--shadow)] disabled:opacity-60"
+      {/* Floating Action Button for Save */}
+      <AnimatePresence>
+        {!loading && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            className="fixed bottom-[90px] left-0 right-0 z-40 px-6 pointer-events-none"
           >
-            {saving ? 'Guardando…' : '💾 Guardar Día'}
-          </button>
-        </div>
-      </motion.div>
+            <div className="mx-auto max-w-[430px] flex justify-center pointer-events-auto">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleSave}
+                disabled={saving}
+                className={`
+                  h-14 px-8 rounded-full shadow-xl font-semibold text-white flex items-center gap-2 backdrop-blur-sm transition-all duration-300
+                  ${saving 
+                    ? 'bg-[var(--text-secondary)] cursor-not-allowed' 
+                    : 'bg-[var(--primary)] hover:bg-[var(--text)] shadow-[0_8px_30px_rgb(0,0,0,0.12)]'
+                  }
+                `}
+              >
+                {saving ? (
+                   <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Guardando...</span>
+                   </>
+                ) : (
+                  <>
+                    <span>Guardar Progreso</span>
+                    <span className="bg-white/20 px-2 py-0.5 rounded-md text-xs font-mono ml-1">
+                       {completedCount}/{CONFIG.habits.length}
+                    </span>
+                  </>
+                )}
+              </motion.button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <BottomNav />
     </div>

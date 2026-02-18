@@ -1,12 +1,13 @@
 'use client';
 
-import { LargeCheckbox } from '@/components/LargeCheckbox';
+import { motion } from 'framer-motion';
+import { Check } from 'lucide-react';
 
 export function HabitCard({
   title,
   subtitle,
   emoji,
-  background,
+  background, // Kept for API compatibility, used as accent color
   iconBackground,
   checked,
   onToggle,
@@ -20,32 +21,66 @@ export function HabitCard({
   onToggle: () => void;
 }) {
   return (
-    <button
-      type="button"
+    <motion.button
+      whileTap={{ scale: 0.98 }}
       onClick={onToggle}
-      className="w-full text-left rounded-2xl px-5 py-5 flex items-center gap-4 pressable"
-      style={{ background }}
+      className={`
+        w-full group relative overflow-hidden rounded-2xl border transition-all duration-300
+        ${checked 
+          ? 'bg-[var(--surface-subtle)] border-[var(--accent)]/30 shadow-none' 
+          : 'bg-[var(--surface)] border-[var(--border)] shadow-sm hover:border-[var(--border-hover)] hover:shadow-md'
+        }
+      `}
     >
-      <div
-        className="h-12 w-12 rounded-full flex items-center justify-center shrink-0"
-        style={{ background: iconBackground }}
-        aria-hidden
-      >
-        <span className="text-2xl">{emoji}</span>
-      </div>
-
-      <div className="flex-1 min-w-0">
-        <div className="text-[19px] font-semibold text-[var(--color-text)] truncate">
-          {title}
+      <div className="flex items-center p-4 gap-4">
+        {/* Icon Container */}
+        <div 
+          className={`
+            h-12 w-12 rounded-xl flex items-center justify-center text-2xl shrink-0 transition-all duration-300
+            ${checked ? 'opacity-50 grayscale' : 'opacity-100'}
+          `}
+          style={{ background: iconBackground }}
+        >
+          {emoji}
         </div>
-        <div className="mt-0.5 text-[14px] text-[var(--color-text-muted)] truncate">
-          {subtitle}
+
+        {/* Text Content */}
+        <div className="flex-1 text-left min-w-0">
+          <h3 className={`
+            text-[16px] font-semibold truncate transition-colors duration-300
+            ${checked ? 'text-[var(--text-tertiary)] line-through' : 'text-[var(--text)]'}
+          `}>
+            {title}
+          </h3>
+          <p className={`
+            text-[13px] truncate transition-colors duration-300
+            ${checked ? 'text-[var(--text-tertiary)]' : 'text-[var(--text-secondary)]'}
+          `}>
+            {subtitle}
+          </p>
+        </div>
+
+        {/* Custom Checkbox */}
+        <div className={`
+          h-8 w-8 rounded-full border-2 flex items-center justify-center transition-all duration-300 shrink-0
+          ${checked 
+            ? 'bg-[var(--accent)] border-[var(--accent)] scale-110' 
+            : 'border-[var(--text-tertiary)] bg-transparent group-hover:border-[var(--accent)]'
+          }
+        `}>
+          <Check 
+            size={16} 
+            className={`
+              transition-all duration-300 font-bold
+              ${checked ? 'text-white scale-100' : 'text-transparent scale-0'}
+            `}
+            strokeWidth={3}
+          />
         </div>
       </div>
-
-      <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
-        <LargeCheckbox checked={checked} onChange={onToggle} ariaLabel={`Marcar ${title}`} />
-      </div>
-    </button>
+      
+      {/* Progress Line (Optional visual cue) */}
+      <div className={`absolute bottom-0 left-0 h-[2px] bg-[var(--accent)] transition-all duration-500 ${checked ? 'w-full' : 'w-0'}`} />
+    </motion.button>
   );
 }

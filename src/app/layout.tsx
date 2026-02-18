@@ -1,5 +1,8 @@
+import { Inter } from 'next/font/google';
 import type { Metadata } from 'next';
 import './globals.css';
+
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Reto de Cuaresma',
@@ -13,9 +16,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body className="min-h-screen bg-[#F5F5F7]">
-        <div className="min-h-screen">
-          <div className="mx-auto min-h-screen max-w-[430px]">
+      <body className={`${inter.className} min-h-screen bg-[var(--bg)] text-[var(--text)] antialiased`}>
+        <div className="min-h-screen flex justify-center bg-[var(--bg-subtle)]">
+          <div className="w-full max-w-[480px] min-h-screen bg-[var(--bg)] shadow-xl relative">
             {children}
           </div>
         </div>
