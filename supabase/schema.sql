@@ -7,7 +7,7 @@
 CREATE TABLE IF NOT EXISTS users (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   name TEXT NOT NULL UNIQUE,
-  pin TEXT NOT NULL,
+  pin TEXT NOT NULL UNIQUE,
   total_points INTEGER DEFAULT 0,
   created_at TIMESTAMP DEFAULT NOW()
 );
@@ -74,46 +74,35 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- ============================================================
--- Datos iniciales: Insertar los 15 participantes
--- ============================================================
-
-INSERT INTO users (name, pin) VALUES 
-  ('Amigo 1', '1001'),
-  ('Amigo 2', '1002'),
-  ('Amigo 3', '1003'),
-  ('Amigo 4', '1004'),
-  ('Amigo 5', '1005'),
-  ('Amigo 6', '1006'),
-  ('Amigo 7', '1007'),
-  ('Amigo 8', '1008'),
-  ('Amigo 9', '1009'),
-  ('Amigo 10', '1010'),
-  ('Amigo 11', '1011'),
-  ('Amigo 12', '1012'),
-  ('Amigo 13', '1013'),
-  ('Amigo 14', '1014'),
-  ('Amigo 15', '1015')
-ON CONFLICT (name) DO NOTHING;
+-- Función para contar usuarios (para limitar a 15)
+CREATE OR REPLACE FUNCTION get_user_count()
+RETURNS INTEGER AS $$
+BEGIN
+  RETURN (SELECT COUNT(*) FROM users);
+END;
+$$ LANGUAGE plpgsql;
 
 -- ============================================================
--- Row Level Security (RLS) Policies
--- Descomentar si deseas habilitar RLS para mayor seguridad
+-- Configuración: PINs disponibles para el grupo
+-- Cada amigo elegirá un PIN del 1001 al 1015 y pondrá su nombre
+-- ============================================================
+
+-- NO insertamos usuarios predefinidos
+-- Los amigos se registrarán al hacer login por primera vez
+-- Elegirán un PIN del 1001-1015 y pondrán su nombre
+
+-- ============================================================
+-- Row Level Security (RLS) Policies - Opcional
 -- ============================================================
 
 -- -- Habilitar RLS en las tablas
 -- ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 -- ALTER TABLE daily_entries ENABLE ROW LEVEL SECURITY;
 
--- -- Política para que los usuarios solo vean sus propios datos
--- CREATE POLICY "Users can view own data" ON users
---   FOR SELECT USING (true); -- Permitir ver todos los usuarios para el leaderboard
+-- -- Permitir lectura de todos los usuarios (para leaderboard)
+-- CREATE POLICY "Allow read all users" ON users
+--   FOR SELECT USING (true);
 
--- CREATE POLICY "Users can view own entries" ON daily_entries
---   FOR SELECT USING (true); -- Permitir ver todas las entries para el leaderboard
-
--- CREATE POLICY "Users can insert own entries" ON daily_entries
---   FOR INSERT WITH CHECK (true);
-
--- CREATE POLICY "Users can update own entries" ON daily_entries
---   FOR UPDATE USING (true);
+-- -- Permitir ver todas las entries (para leaderboard)
+-- CREATE POLICY "Allow read all entries" ON daily_entries
+--   FOR SELECT USING (true);

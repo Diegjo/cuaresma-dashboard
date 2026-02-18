@@ -44,6 +44,77 @@ export async function loginUser(name: string, pin: string): Promise<User | null>
   return data as User;
 }
 
+/**
+ * Verifica si existe un usuario con el PIN dado
+ * @param pin - PIN a verificar (1001-1015)
+ * @returns El usuario si existe, null si no existe
+ */
+export async function checkUserByPin(pin: string): Promise<User | null> {
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('pin', pin)
+    .single();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return data as User;
+}
+
+/**
+ * Crea un nuevo usuario con PIN y nombre
+ * @param pin - PIN del usuario (1001-1015)
+ * @param name - Nombre del usuario
+ * @returns El usuario creado o null si hubo error
+ */
+export async function createUser(pin: string, name: string): Promise<User | null> {
+  const { data, error } = await supabase
+    .from('users')
+    .insert({
+      pin: pin,
+      name: name,
+      total_points: 0,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating user:', error);
+    return null;
+  }
+
+  return data as User;
+}
+
+/**
+ * Obtiene el número total de usuarios registrados
+ * @returns Número de usuarios
+ */
+export async function getUserCount(): Promise<number> {
+  const { count, error } = await supabase
+    .from('users')
+    .select('*', { count: 'exact', head: true });
+
+  if (error) {
+    console.error('Error getting user count:', error);
+    return 0;
+  }
+
+  return count || 0;
+}
+
+/**
+ * Valida si un PIN está en el rango permitido (1001-1015)
+ * @param pin - PIN a validar
+ * @returns true si es válido, false si no
+ */
+export function isValidPin(pin: string): boolean {
+  const pinNum = parseInt(pin, 10);
+  return !isNaN(pinNum) && pinNum >= 1001 && pinNum <= 1015;
+}
+
 // ====== ENTRADAS DIARIAS ======
 
 export async function getEntryForDate(userId: string, date: string): Promise<DailyEntry | null> {
