@@ -289,7 +289,7 @@ function DashboardContent() {
                 </div>
                 <div className="text-left">
                   <h3 className={`font-bold text-lg ${todayCheckin?.prayed_rosary ? 'text-[var(--primary-foreground)]' : 'text-[var(--text)]'}`}>
-                    {todayCheckin?.prayed_rosary ? '¡Rosario completado!' : 'Marcar rosario de hoy'}
+                    {todayCheckin?.prayed_rosary ? '¡Rosario completado!' : 'Rosario del día'}
                   </h3>
                   {!todayCheckin?.prayed_rosary && (
                     <p className="text-sm text-[var(--text-secondary)]">Toca aquí cuando termines de rezar</p>
