@@ -59,7 +59,7 @@ export default function LoginPage() {
           <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-[24px] bg-[var(--surface)] shadow-sm border border-[var(--border)]">
             <span className="text-[48px] leading-none">✝️</span>
           </div>
-          <h1 className="text-2xl font-bold text-[var(--text)]">Reto de Cuaresma</h1>
+          <h1 className="text-2xl font-bold text-[var(--text)]">Reto de Cuaresma - Finders</h1>
           <p className="mt-2 text-[var(--text-secondary)]">
             {isLogin ? 'Inicia sesión para continuar' : 'Crea tu cuenta'}
           </p>

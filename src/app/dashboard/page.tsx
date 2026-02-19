@@ -347,7 +347,7 @@ function DashboardContent() {
               exit={{ opacity: 0, x: -20 }}
             >
               <div className="flex justify-between items-center mb-6">
-                <h2 className="font-bold text-xl text-[var(--text)]">Grupo</h2>
+                <h2 className="font-bold text-xl text-[var(--text)]">Finders</h2>
                 <div className="text-sm text-[var(--text-secondary)] bg-[var(--surface)] px-3 py-1 rounded-full border border-[var(--border)]">
                   {socialData.filter(u => u.prayed_rosary).length} / {socialData.length} completaron
                 </div>
