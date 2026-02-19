@@ -11,7 +11,9 @@ import {
 } from '@/lib/storage';
 import { FirstPlaceCard } from '@/components/FirstPlaceCard';
 import { LeaderboardItem } from '@/components/LeaderboardItem';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { BottomNav } from '@/components/BottomNav';
+import { LogOut } from 'lucide-react';
 
 export default function LeaderboardPage() {
   const router = useRouter();
@@ -53,24 +55,21 @@ export default function LeaderboardPage() {
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="text-center">
-              <div className="text-[24px] font-semibold tracking-wide">RANKING FINDERS</div>
-              <div className="mt-1 text-[15px] text-[var(--color-text-muted)]">🏆 Cuaresma</div>
+              <div className="text-[24px] font-semibold tracking-wide text-[var(--text)]">RANKING FINDERS</div>
+              <div className="mt-1 text-[15px] text-[var(--text-secondary)]">🏆 Cuaresma</div>
             </div>
           </div>
 
-          <button
-            onClick={handleLogout}
-            className="-mt-1 h-11 w-11 rounded-full bg-white border border-black/5 shadow-[var(--shadow)] flex items-center justify-center"
-            aria-label="Cerrar sesión"
-          >
-            <span className="text-sm font-semibold">
-              {user.name
-                .split(' ')
-                .slice(0, 2)
-                .map((p) => p[0]?.toUpperCase())
-                .join('')}
-            </span>
-          </button>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <button
+              onClick={handleLogout}
+              className="h-10 w-10 rounded-full bg-[var(--surface)] border border-[var(--border)] shadow-sm flex items-center justify-center hover:bg-[var(--bg-subtle)] transition-colors text-[var(--text-secondary)] hover:text-[var(--text)]"
+              aria-label="Cerrar sesión"
+            >
+              <LogOut size={18} />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -81,7 +80,7 @@ export default function LeaderboardPage() {
           <>
             {first && <FirstPlaceCard entry={first} />}
 
-            <div className="rounded-3xl bg-white border border-black/5 shadow-[var(--shadow)] overflow-hidden">
+            <div className="rounded-3xl bg-[var(--surface)] border border-[var(--border)] shadow-[var(--shadow)] overflow-hidden">
               {rest.map((entry, idx) => (
                 <div key={entry.id}>
                   <LeaderboardItem
@@ -89,7 +88,7 @@ export default function LeaderboardPage() {
                     entry={entry}
                     highlight={entry.id === user.id}
                   />
-                  <div className="h-px bg-[#E5E5EA]" />
+                  <div className="h-px bg-[var(--border)]" />
                 </div>
               ))}
             </div>

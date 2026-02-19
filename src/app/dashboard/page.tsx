@@ -30,39 +30,41 @@ const HABIT_UI: Record<
   habit1: {
     subtitle: 'Entrenamiento o actividad física',
     background: 'var(--surface)',
-    iconBackground: '#E0F2F1', // Teal 50
+    iconBackground: 'var(--habit-1-icon-bg)',
   },
   habit2: {
     subtitle: 'Comer más sano hoy',
     background: 'var(--surface)',
-    iconBackground: '#FFF3E0', // Orange 50
+    iconBackground: 'var(--habit-2-icon-bg)',
   },
   habit3: {
     subtitle: 'Cuidar mente y corazón',
     background: 'var(--surface)',
-    iconBackground: '#F3E5F5', // Purple 50
+    iconBackground: 'var(--habit-3-icon-bg)',
   },
   habit4: {
     subtitle: 'Levantarte temprano',
     background: 'var(--surface)',
-    iconBackground: '#FFF8E1', // Amber 50
+    iconBackground: 'var(--habit-4-icon-bg)',
   },
   habit5: {
     subtitle: 'Leer y aprender',
     background: 'var(--surface)',
-    iconBackground: '#E1F5FE', // Light Blue 50
+    iconBackground: 'var(--habit-5-icon-bg)',
   },
   habit6: {
     subtitle: 'Oración del día',
     background: 'var(--surface)',
-    iconBackground: '#FFEBEE', // Red 50
+    iconBackground: 'var(--habit-6-icon-bg)',
   },
   habit7: {
     subtitle: 'Ofrecer un rosario',
     background: 'var(--surface)',
-    iconBackground: '#E8EAF6', // Indigo 50
+    iconBackground: 'var(--habit-7-icon-bg)',
   },
 };
+
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -177,13 +179,16 @@ export default function DashboardPage() {
             </h1>
           </div>
 
-          <button
-            onClick={handleLogout}
-            className="h-10 w-10 rounded-full bg-white border border-[var(--border)] shadow-sm flex items-center justify-center hover:bg-[var(--bg-subtle)] transition-colors text-[var(--text-secondary)] hover:text-[var(--text)]"
-            aria-label="Cerrar sesión"
-          >
-            <LogOut size={18} />
-          </button>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <button
+              onClick={handleLogout}
+              className="h-10 w-10 rounded-full bg-[var(--surface)] border border-[var(--border)] shadow-sm flex items-center justify-center hover:bg-[var(--bg-subtle)] transition-colors text-[var(--text-secondary)] hover:text-[var(--text)]"
+              aria-label="Cerrar sesión"
+            >
+              <LogOut size={18} />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -263,7 +268,7 @@ export default function DashboardPage() {
                 onClick={handleSave}
                 disabled={saving}
                 className={`
-                  h-14 px-8 rounded-full shadow-xl font-semibold text-white flex items-center gap-2 backdrop-blur-sm transition-all duration-300
+                  h-14 px-8 rounded-full shadow-xl font-semibold text-[var(--primary-foreground)] flex items-center gap-2 backdrop-blur-sm transition-all duration-300
                   ${saving 
                     ? 'bg-[var(--text-secondary)] cursor-not-allowed' 
                     : 'bg-[var(--primary)] hover:bg-[var(--text)] shadow-[0_8px_30px_rgb(0,0,0,0.12)]'

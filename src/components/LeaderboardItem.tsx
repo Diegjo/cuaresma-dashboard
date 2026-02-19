@@ -15,14 +15,14 @@ export function LeaderboardItem({
     <div
       className={
         'px-5 py-4 flex items-center gap-3 ' +
-        (highlight ? 'bg-[rgba(0,122,255,0.06)]' : '')
+        (highlight ? 'bg-[var(--accent-soft)]' : '')
       }
     >
-      <div className="w-8 text-[18px] font-semibold text-[#8E8E93]">{index}</div>
-      <div className="flex-1 min-w-0 text-[18px] font-semibold text-[var(--color-text)] truncate">
+      <div className="w-8 text-[18px] font-semibold text-[var(--text-tertiary)]">{index}</div>
+      <div className="flex-1 min-w-0 text-[18px] font-semibold text-[var(--text)] truncate">
         {entry.name}
       </div>
-      <div className="w-20 text-right text-[18px] font-semibold text-[var(--color-accent)]">
+      <div className="w-20 text-right text-[18px] font-semibold text-[var(--accent)]">
         {entry.total_points}
       </div>
     </div>

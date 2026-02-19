@@ -9,19 +9,28 @@ export const metadata: Metadata = {
   description: 'Dashboard de 40 días de retos espirituales',
 };
 
+import { ThemeProvider } from '@/components/ThemeProvider';
+
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es">
+    <html lang="es" suppressHydrationWarning>
       <body className={`${inter.className} min-h-screen bg-[var(--bg)] text-[var(--text)] antialiased`}>
-        <div className="min-h-screen flex justify-center bg-[var(--bg-subtle)]">
-          <div className="w-full max-w-[480px] min-h-screen bg-[var(--bg)] shadow-xl relative">
-            {children}
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <div className="min-h-screen flex justify-center bg-[var(--bg-subtle)]">
+            <div className="w-full max-w-[480px] min-h-screen bg-[var(--bg)] shadow-xl relative">
+              {children}
+            </div>
           </div>
-        </div>
+        </ThemeProvider>
       </body>
     </html>
   );

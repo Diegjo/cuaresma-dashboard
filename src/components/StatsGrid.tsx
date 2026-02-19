@@ -24,7 +24,7 @@ export function StatsGrid({
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="col-span-1 bg-white p-4 rounded-2xl shadow-sm border border-[var(--border)] flex flex-col justify-between h-[150px] relative overflow-hidden group"
+        className="col-span-1 bg-[var(--surface)] p-4 rounded-2xl shadow-sm border border-[var(--border)] flex flex-col justify-between h-[150px] relative overflow-hidden group"
       >
         <div className="flex justify-between items-start z-10">
           <div className="bg-[var(--accent-soft)] p-2 rounded-xl group-hover:scale-105 transition-transform">
@@ -65,7 +65,7 @@ export function StatsGrid({
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="flex-1 bg-white p-3 rounded-2xl shadow-sm border border-[var(--border)] flex items-center gap-3 relative overflow-hidden"
+          className="flex-1 bg-[var(--surface)] p-3 rounded-2xl shadow-sm border border-[var(--border)] flex items-center gap-3 relative overflow-hidden"
         >
           <div className="bg-[var(--warning-soft)] p-2.5 rounded-xl shrink-0 z-10">
             <Flame className="w-5 h-5 text-[var(--warning)]" />
@@ -87,7 +87,7 @@ export function StatsGrid({
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="flex-1 bg-white p-3 rounded-2xl shadow-sm border border-[var(--border)] flex items-center gap-3 relative overflow-hidden"
+          className="flex-1 bg-[var(--surface)] p-3 rounded-2xl shadow-sm border border-[var(--border)] flex items-center gap-3 relative overflow-hidden"
         >
           <div className="bg-[var(--success-soft)] p-2.5 rounded-xl shrink-0 z-10">
             <Trophy className="w-5 h-5 text-[var(--success)]" />

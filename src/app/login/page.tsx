@@ -23,7 +23,7 @@ function Toast({ message }: { message: string }) {
   return (
     <div className="fixed left-0 right-0 top-3 z-50 px-5">
       <div className="mx-auto max-w-[430px]">
-        <div className="animate-toastIn rounded-2xl bg-white/90 px-4 py-3 text-sm text-[var(--color-text)] shadow-[var(--shadow)] backdrop-blur-xl border border-black/10">
+        <div className="animate-toastIn rounded-2xl bg-[color-mix(in_srgb,var(--surface),transparent_10%)] px-4 py-3 text-sm text-[var(--text)] shadow-[var(--shadow)] backdrop-blur-xl border border-[var(--border)]">
           {message}
         </div>
       </div>
@@ -129,14 +129,14 @@ export default function LoginPage() {
 
       <div className="mx-auto w-full max-w-[430px]">
         <div className="text-center">
-          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-[24px] bg-white shadow-[var(--shadow)] border border-black/5">
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-[24px] bg-[var(--surface)] shadow-[var(--shadow)] border border-[var(--border)]">
             <span className="text-[48px] leading-none">✝️</span>
           </div>
 
-          <h1 className="ios-title text-[24px] font-semibold text-[var(--color-text)]">
+          <h1 className="ios-title text-[24px] font-semibold text-[var(--text)]">
             Reto de Cuaresma - Finders
           </h1>
-          <p className="mt-1 text-[15px] text-[var(--color-text-muted)]">Entra con tu PIN</p>
+          <p className="mt-1 text-[15px] text-[var(--text-secondary)]">Entra con tu PIN</p>
         </div>
 
         <div className="mt-10">
@@ -152,7 +152,7 @@ export default function LoginPage() {
                 className="space-y-4"
               >
                 <div>
-                  <label className="text-sm font-semibold text-[var(--color-text)]">PIN</label>
+                  <label className="text-sm font-semibold text-[var(--text)]">PIN</label>
                   <div className={`mt-2 ${shake ? 'animate-shake' : ''}`}>
                     <input
                       type="password"
@@ -162,11 +162,11 @@ export default function LoginPage() {
                       maxLength={4}
                       inputMode="numeric"
                       pattern="[0-9]*"
-                      className="w-full h-14 rounded-xl bg-white border border-black/10 px-4 text-center text-lg tracking-widest shadow-[0_1px_0_rgba(0,0,0,0.04)] focus:outline-none focus:ring-4 focus:ring-[rgba(0,122,255,0.18)]"
+                      className="w-full h-14 rounded-xl bg-[var(--surface)] border border-[var(--border)] px-4 text-center text-lg tracking-widest shadow-[0_1px_0_rgba(0,0,0,0.04)] focus:outline-none focus:ring-4 focus:ring-[var(--accent-soft)]"
                       autoFocus
                     />
                   </div>
-                  <p className="mt-2 text-center text-xs text-[var(--color-text-muted)]">
+                  <p className="mt-2 text-center text-xs text-[var(--text-secondary)]">
                     PINs válidos: {MIN_PIN} – {MAX_PIN}
                   </p>
                 </div>
@@ -174,16 +174,16 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full h-14 rounded-xl bg-[#007AFF] text-white font-semibold shadow-[var(--shadow)] disabled:opacity-60"
+                  className="w-full h-14 rounded-xl bg-[var(--accent)] text-[var(--accent-foreground)] font-semibold shadow-[var(--shadow)] disabled:opacity-60"
                 >
                   {loading ? 'Entrando…' : 'Continuar'}
                 </button>
 
-                <p className="text-center text-xs text-[var(--color-text-muted)]">
+                <p className="text-center text-xs text-[var(--text-secondary)]">
                   {userCount} de {MAX_USERS} registrados
                 </p>
 
-                <p className="pt-2 text-center text-xs text-[var(--color-text-muted)]">
+                <p className="pt-2 text-center text-xs text-[var(--text-secondary)]">
                   {CONFIG.appName}
                 </p>
               </motion.form>
@@ -198,17 +198,17 @@ export default function LoginPage() {
                 className="space-y-4"
               >
                 <div className="text-center">
-                  <div className="inline-flex items-center rounded-full bg-black/5 px-3 py-1 text-sm text-[var(--color-text-muted)]">
+                  <div className="inline-flex items-center rounded-full bg-[var(--bg-subtle)] px-3 py-1 text-sm text-[var(--text-secondary)]">
                     PIN:{' '}
-                    <span className="ml-1 font-semibold text-[var(--color-text)]">{pin}</span>
+                    <span className="ml-1 font-semibold text-[var(--text)]">{pin}</span>
                   </div>
-                  <p className="mt-3 text-[15px] text-[var(--color-text-muted)]">
+                  <p className="mt-3 text-[15px] text-[var(--text-secondary)]">
                     Ingresa tu nombre para registrarte
                   </p>
                 </div>
 
                 <div>
-                  <label className="text-sm font-semibold text-[var(--color-text)]">Nombre</label>
+                  <label className="text-sm font-semibold text-[var(--text)]">Nombre</label>
                   <div className="mt-2">
                     <input
                       value={name}
@@ -216,7 +216,7 @@ export default function LoginPage() {
                       placeholder="Tu nombre"
                       maxLength={30}
                       autoFocus
-                      className="w-full h-14 rounded-xl bg-white border border-black/10 px-4 text-[16px] shadow-[0_1px_0_rgba(0,0,0,0.04)] focus:outline-none focus:ring-4 focus:ring-[rgba(0,122,255,0.18)]"
+                      className="w-full h-14 rounded-xl bg-[var(--surface)] border border-[var(--border)] px-4 text-[16px] shadow-[0_1px_0_rgba(0,0,0,0.04)] focus:outline-none focus:ring-4 focus:ring-[var(--accent-soft)]"
                     />
                   </div>
                 </div>
@@ -224,7 +224,7 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full h-14 rounded-xl bg-[#007AFF] text-white font-semibold shadow-[var(--shadow)] disabled:opacity-60"
+                  className="w-full h-14 rounded-xl bg-[var(--accent)] text-[var(--accent-foreground)] font-semibold shadow-[var(--shadow)] disabled:opacity-60"
                 >
                   {loading ? 'Creando…' : 'Crear cuenta y entrar'}
                 </button>
@@ -233,12 +233,12 @@ export default function LoginPage() {
                   type="button"
                   onClick={back}
                   disabled={loading}
-                  className="w-full h-14 rounded-xl bg-white text-[var(--color-text)] font-semibold border border-black/10"
+                  className="w-full h-14 rounded-xl bg-[var(--surface)] text-[var(--text)] font-semibold border border-[var(--border)]"
                 >
                   Volver
                 </button>
 
-                <p className="text-center text-xs text-[var(--color-text-muted)]">
+                <p className="text-center text-xs text-[var(--text-secondary)]">
                   {remainingSlots} de {MAX_USERS} lugares disponibles
                 </p>
               </motion.form>
