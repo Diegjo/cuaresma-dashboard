@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',
-  distDir: 'dist',
+  // output: 'export', // Comentado para permitir API Routes dinámicas
+  // distDir: 'dist',
   images: {
     unoptimized: true,
   },

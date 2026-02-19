@@ -1,249 +1,128 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AnimatePresence, motion } from 'framer-motion';
-import { CONFIG } from '@/lib/config';
-import {
-  checkUserByPin,
-  createUser,
-  setCurrentUser,
-  getUserCount,
-  isValidPin,
-} from '@/lib/storage';
-
-type LoginStep = 'pin' | 'register';
-
-const MAX_USERS = 15;
-const MIN_PIN = 1001;
-const MAX_PIN = 1015;
-
-function Toast({ message }: { message: string }) {
-  if (!message) return null;
-  return (
-    <div className="fixed left-0 right-0 top-3 z-50 px-5">
-      <div className="mx-auto max-w-[430px]">
-        <div className="animate-toastIn rounded-2xl bg-[color-mix(in_srgb,var(--surface),transparent_10%)] px-4 py-3 text-sm text-[var(--text)] shadow-[var(--shadow)] backdrop-blur-xl border border-[var(--border)]">
-          {message}
-        </div>
-      </div>
-    </div>
-  );
-}
+import { createClient } from '@/lib/supabase/client';
+import { toast } from 'sonner';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [step, setStep] = useState<LoginStep>('pin');
-  const [pin, setPin] = useState('');
+  const supabase = createClient();
+  const [isLogin, setIsLogin] = useState(true);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [toast, setToast] = useState('');
   const [loading, setLoading] = useState(false);
-  const [userCount, setUserCount] = useState(0);
-  const [shake, setShake] = useState(false);
+  const [error, setError] = useState('');
 
-  useEffect(() => {
-    getUserCount().then(setUserCount);
-  }, []);
-
-  useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(''), 2400);
-    return () => clearTimeout(t);
-  }, [toast]);
-
-  const remainingSlots = MAX_USERS - userCount;
-
-  const pinHelp = useMemo(() => `Ingresa tu PIN (${MIN_PIN}-${MAX_PIN})`, []);
-
-  const handlePinSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setToast('');
-
-    if (!isValidPin(pin)) {
-      setShake(true);
-      setTimeout(() => setShake(false), 350);
-      setToast(`PIN inválido. Debe ser un número entre ${MIN_PIN} y ${MAX_PIN}.`);
-      return;
-    }
-
     setLoading(true);
+    setError('');
 
     try {
-      const existingUser = await checkUserByPin(pin);
-      if (existingUser) {
-        setCurrentUser(existingUser);
+      if (isLogin) {
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (error) throw error;
+        toast.success('¡Bienvenido de nuevo!');
         router.push('/dashboard');
-        return;
+      } else {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: name,
+            },
+          },
+        });
+        if (error) throw error;
+        toast.success('Cuenta creada. Por favor inicia sesión.');
+        setIsLogin(true);
       }
-
-      const count = await getUserCount();
-      if (count >= MAX_USERS) {
-        setToast('Ya se alcanzó el límite máximo de 15 participantes.');
-        setLoading(false);
-        return;
-      }
-
-      setUserCount(count);
-      setStep('register');
-      setLoading(false);
-    } catch {
-      setToast('Error al conectar con el servidor.');
-      setLoading(false);
-    }
-  };
-
-  const handleRegisterSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setToast('');
-
-    if (!name.trim() || name.trim().length < 2) {
-      setToast('Ingresa tu nombre (mínimo 2 caracteres).');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const newUser = await createUser(pin, name.trim());
-      if (!newUser) {
-        setToast('Error al crear la cuenta. Inténtalo de nuevo.');
-        setLoading(false);
-        return;
-      }
-      setCurrentUser(newUser);
-      router.push('/dashboard');
-    } catch {
-      setToast('Error al conectar con el servidor.');
+    } catch (e: any) {
+      console.error(e);
+      setError(e.message);
+      toast.error(e.message);
+    } finally {
       setLoading(false);
     }
-  };
-
-  const back = () => {
-    setStep('pin');
-    setName('');
-    setToast('');
   };
 
   return (
-    <div className="min-h-screen px-5 py-10 flex items-center">
-      <Toast message={toast} />
-
-      <div className="mx-auto w-full max-w-[430px]">
+    <div className="min-h-screen px-5 py-10 flex items-center justify-center bg-[var(--bg-subtle)]">
+      <div className="w-full max-w-[430px] space-y-8">
         <div className="text-center">
-          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-[24px] bg-[var(--surface)] shadow-[var(--shadow)] border border-[var(--border)]">
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-[24px] bg-[var(--surface)] shadow-sm border border-[var(--border)]">
             <span className="text-[48px] leading-none">✝️</span>
           </div>
-
-          <h1 className="ios-title text-[24px] font-semibold text-[var(--text)]">
-            Reto de Cuaresma - Finders
-          </h1>
-          <p className="mt-1 text-[15px] text-[var(--text-secondary)]">Entra con tu PIN</p>
+          <h1 className="text-2xl font-bold text-[var(--text)]">Reto de Cuaresma</h1>
+          <p className="mt-2 text-[var(--text-secondary)]">
+            {isLogin ? 'Inicia sesión para continuar' : 'Crea tu cuenta'}
+          </p>
         </div>
 
-        <div className="mt-10">
-          <AnimatePresence mode="wait">
-            {step === 'pin' ? (
-              <motion.form
-                key="pin"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.2 }}
-                onSubmit={handlePinSubmit}
-                className="space-y-4"
-              >
-                <div>
-                  <label className="text-sm font-semibold text-[var(--text)]">PIN</label>
-                  <div className={`mt-2 ${shake ? 'animate-shake' : ''}`}>
-                    <input
-                      type="password"
-                      value={pin}
-                      onChange={(e) => setPin(e.target.value)}
-                      placeholder={pinHelp}
-                      maxLength={4}
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      className="w-full h-14 rounded-xl bg-[var(--surface)] border border-[var(--border)] px-4 text-center text-lg tracking-widest shadow-[0_1px_0_rgba(0,0,0,0.04)] focus:outline-none focus:ring-4 focus:ring-[var(--accent-soft)]"
-                      autoFocus
-                    />
-                  </div>
-                  <p className="mt-2 text-center text-xs text-[var(--text-secondary)]">
-                    PINs válidos: {MIN_PIN} – {MAX_PIN}
-                  </p>
-                </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {!isLogin && (
+            <div>
+              <label className="text-sm font-medium text-[var(--text)]">Nombre completo</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="mt-1 w-full h-12 px-4 rounded-xl bg-[var(--surface)] border border-[var(--border)] focus:ring-2 focus:ring-[var(--primary)] outline-none"
+                required
+              />
+            </div>
+          )}
+          
+          <div>
+            <label className="text-sm font-medium text-[var(--text)]">Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="mt-1 w-full h-12 px-4 rounded-xl bg-[var(--surface)] border border-[var(--border)] focus:ring-2 focus:ring-[var(--primary)] outline-none"
+              required
+            />
+          </div>
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full h-14 rounded-xl bg-[var(--accent)] text-[var(--accent-foreground)] font-semibold shadow-[var(--shadow)] disabled:opacity-60"
-                >
-                  {loading ? 'Entrando…' : 'Continuar'}
-                </button>
+          <div>
+            <label className="text-sm font-medium text-[var(--text)]">Contraseña</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="mt-1 w-full h-12 px-4 rounded-xl bg-[var(--surface)] border border-[var(--border)] focus:ring-2 focus:ring-[var(--primary)] outline-none"
+              required
+            />
+          </div>
 
-                <p className="text-center text-xs text-[var(--text-secondary)]">
-                  {userCount} de {MAX_USERS} registrados
-                </p>
+          {error && (
+            <div className="p-3 rounded-lg bg-red-50 text-red-600 text-sm">
+              {error}
+            </div>
+          )}
 
-                <p className="pt-2 text-center text-xs text-[var(--text-secondary)]">
-                  {CONFIG.appName}
-                </p>
-              </motion.form>
-            ) : (
-              <motion.form
-                key="register"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.2 }}
-                onSubmit={handleRegisterSubmit}
-                className="space-y-4"
-              >
-                <div className="text-center">
-                  <div className="inline-flex items-center rounded-full bg-[var(--bg-subtle)] px-3 py-1 text-sm text-[var(--text-secondary)]">
-                    PIN:{' '}
-                    <span className="ml-1 font-semibold text-[var(--text)]">{pin}</span>
-                  </div>
-                  <p className="mt-3 text-[15px] text-[var(--text-secondary)]">
-                    Ingresa tu nombre para registrarte
-                  </p>
-                </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full h-12 rounded-xl bg-[var(--primary)] text-white font-semibold shadow-lg shadow-[var(--primary)]/20 disabled:opacity-50"
+          >
+            {loading ? 'Procesando...' : (isLogin ? 'Entrar' : 'Registrarse')}
+          </button>
+        </form>
 
-                <div>
-                  <label className="text-sm font-semibold text-[var(--text)]">Nombre</label>
-                  <div className="mt-2">
-                    <input
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="Tu nombre"
-                      maxLength={30}
-                      autoFocus
-                      className="w-full h-14 rounded-xl bg-[var(--surface)] border border-[var(--border)] px-4 text-[16px] shadow-[0_1px_0_rgba(0,0,0,0.04)] focus:outline-none focus:ring-4 focus:ring-[var(--accent-soft)]"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full h-14 rounded-xl bg-[var(--accent)] text-[var(--accent-foreground)] font-semibold shadow-[var(--shadow)] disabled:opacity-60"
-                >
-                  {loading ? 'Creando…' : 'Crear cuenta y entrar'}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={back}
-                  disabled={loading}
-                  className="w-full h-14 rounded-xl bg-[var(--surface)] text-[var(--text)] font-semibold border border-[var(--border)]"
-                >
-                  Volver
-                </button>
-
-                <p className="text-center text-xs text-[var(--text-secondary)]">
-                  {remainingSlots} de {MAX_USERS} lugares disponibles
-                </p>
-              </motion.form>
-            )}
-          </AnimatePresence>
+        <div className="text-center">
+          <button
+            onClick={() => setIsLogin(!isLogin)}
+            className="text-sm text-[var(--text-secondary)] hover:text-[var(--primary)]"
+          >
+            {isLogin ? '¿No tienes cuenta? Regístrate' : '¿Ya tienes cuenta? Inicia sesión'}
+          </button>
         </div>
       </div>
     </div>

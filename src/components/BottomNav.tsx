@@ -1,37 +1,40 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Home, Trophy } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { Home, Calendar, Users } from 'lucide-react';
+import { Suspense } from 'react';
 
-const tabs = [
-  { href: '/dashboard', label: 'Hoy', icon: Home },
-  { href: '/leaderboard', label: 'Ranking', icon: Trophy },
-];
+function BottomNavContent() {
+  const searchParams = useSearchParams();
+  const currentTab = searchParams.get('tab') || 'home';
 
-export function BottomNav() {
-  const pathname = usePathname();
+  const tabs = [
+    { id: 'home', label: 'Hoy', icon: Home, href: '/dashboard?tab=home' },
+    { id: 'calendar', label: 'Calendario', icon: Calendar, href: '/dashboard?tab=calendar' },
+    { id: 'social', label: 'Grupo', icon: Users, href: '/dashboard?tab=social' },
+  ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none">
-      <div className="mx-auto max-w-[430px] px-6 pb-6 pt-0 pointer-events-auto">
-        <div className="rounded-full bg-[color-mix(in_srgb,var(--surface),transparent_15%)] backdrop-blur-xl border border-[var(--border)] shadow-lg flex justify-around items-center h-16 relative">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none pb-6">
+      <div className="mx-auto max-w-[430px] px-6 pointer-events-auto">
+        <div className="rounded-full bg-[var(--surface)]/90 backdrop-blur-xl border border-[var(--border)] shadow-lg flex justify-around items-center h-16 relative">
           {tabs.map((t) => {
-            const active = pathname.startsWith(t.href);
+            const active = currentTab === t.id;
             const Icon = t.icon;
             return (
               <Link
-                key={t.href}
+                key={t.id}
                 href={t.href}
                 className={`relative flex flex-col items-center justify-center w-full h-full transition-all duration-300 ${
                   active ? 'text-[var(--primary)]' : 'text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]'
                 }`}
               >
-                <div className={`p-1.5 rounded-xl transition-all duration-300 ${active ? 'bg-[var(--accent-soft)] text-[var(--accent)] transform -translate-y-1' : ''}`}>
+                <div className={`p-2 rounded-xl transition-all duration-300 ${active ? 'bg-[var(--primary)]/10 text-[var(--primary)] -translate-y-1' : ''}`}>
                   <Icon size={24} strokeWidth={active ? 2.5 : 2} />
                 </div>
                 {active && (
-                   <span className="absolute bottom-2 w-1 h-1 rounded-full bg-[var(--accent)]" />
+                   <span className="absolute bottom-2 w-1 h-1 rounded-full bg-[var(--primary)]" />
                 )}
               </Link>
             );
@@ -39,5 +42,13 @@ export function BottomNav() {
         </div>
       </div>
     </nav>
+  );
+}
+
+export function BottomNav() {
+  return (
+    <Suspense fallback={<div className="h-16" />}>
+      <BottomNavContent />
+    </Suspense>
   );
 }

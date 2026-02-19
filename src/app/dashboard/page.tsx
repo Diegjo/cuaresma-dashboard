@@ -1,190 +1,254 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { LogOut, Calendar as CalendarIcon, Check, Flame, Trophy } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CONFIG, Habit } from '@/lib/config';
-import {
-  getCurrentUser,
-  clearCurrentUser,
-  getEntryForDate,
-  saveEntry,
-  calculateCurrentStreak,
-  getUserEntries,
-  calculateTotalPoints,
-  User,
-  DailyEntry,
-} from '@/lib/storage';
-import { StatsGrid } from '@/components/StatsGrid';
-import { HabitCard } from '@/components/HabitCard';
+import { toast } from 'sonner';
+
+import { RosaryCard } from '@/components/RosaryCard';
+import { PurposeCard } from '@/components/PurposeCard';
+import { CalendarGrid } from '@/components/CalendarGrid';
+import { SocialList } from '@/components/SocialList';
 import { BottomNav } from '@/components/BottomNav';
-import { LogOut, Calendar } from 'lucide-react';
-
-// Use CSS variables via inline styles or tailwind classes
-const HABIT_UI: Record<
-  string,
-  { subtitle: string; background: string; iconBackground: string }
-> = {
-  habit1: {
-    subtitle: 'Entrenamiento o actividad física',
-    background: 'var(--surface)',
-    iconBackground: 'var(--habit-1-icon-bg)',
-  },
-  habit2: {
-    subtitle: 'Comer más sano hoy',
-    background: 'var(--surface)',
-    iconBackground: 'var(--habit-2-icon-bg)',
-  },
-  habit3: {
-    subtitle: 'Cuidar mente y corazón',
-    background: 'var(--surface)',
-    iconBackground: 'var(--habit-3-icon-bg)',
-  },
-  habit4: {
-    subtitle: 'Levantarte temprano',
-    background: 'var(--surface)',
-    iconBackground: 'var(--habit-4-icon-bg)',
-  },
-  habit5: {
-    subtitle: 'Leer y aprender',
-    background: 'var(--surface)',
-    iconBackground: 'var(--habit-5-icon-bg)',
-  },
-  habit6: {
-    subtitle: 'Oración del día',
-    background: 'var(--surface)',
-    iconBackground: 'var(--habit-6-icon-bg)',
-  },
-  habit7: {
-    subtitle: 'Ofrecer un rosario',
-    background: 'var(--surface)',
-    iconBackground: 'var(--habit-7-icon-bg)',
-  },
-};
-
 import { ThemeToggle } from '@/components/ThemeToggle';
 
-export default function DashboardPage() {
+function DashboardContent() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
-  const [habits, setHabits] = useState<Record<string, boolean>>({});
-  const [streak, setStreak] = useState(0);
-  const [totalPoints, setTotalPoints] = useState(0);
-  const [entries, setEntries] = useState<DailyEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const searchParams = useSearchParams();
+  const currentTab = searchParams.get('tab') || 'home';
+  const supabase = createClient();
 
-  const today = format(new Date(), 'yyyy-MM-dd');
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  
+  // Data states
+  const [todayCheckin, setTodayCheckin] = useState<any>(null);
+  const [allCheckins, setAllCheckins] = useState<any[]>([]);
+  const [socialData, setSocialData] = useState<any[]>([]);
+  const [lentRange, setLentRange] = useState<any>(null);
+  const [stats, setStats] = useState({ streak: 0, totalDays: 0 });
+
+  const todayStr = format(new Date(), 'yyyy-MM-dd');
 
   useEffect(() => {
-    const currentUser = getCurrentUser();
-    if (!currentUser) {
-      router.push('/login');
-      return;
-    }
-    setUser(currentUser);
-    loadUserData(currentUser.id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router]);
-
-  const loadUserData = async (userId: string) => {
-    setLoading(true);
-
-    const entry = await getEntryForDate(userId, today);
-    if (entry) {
-      setHabits({
-        habit1: entry.habit1,
-        habit2: entry.habit2,
-        habit3: entry.habit3,
-        habit4: entry.habit4,
-        habit5: entry.habit5,
-        habit6: entry.habit6,
-        habit7: entry.habit7,
-      });
-    } else {
-      const init: Record<string, boolean> = {};
-      CONFIG.habits.forEach((h) => (init[h.id] = false));
-      setHabits(init);
-    }
-
-    const [userStreak, userEntries, points] = await Promise.all([
-      calculateCurrentStreak(userId),
-      getUserEntries(userId),
-      calculateTotalPoints(userId),
-    ]);
-
-    setStreak(userStreak);
-    setEntries(userEntries);
-    setTotalPoints(points);
-    setLoading(false);
-  };
-
-  const handleHabitToggle = (habitId: string) => {
-    setHabits((prev) => ({ ...prev, [habitId]: !prev[habitId] }));
-  };
-
-  const handleSave = async () => {
-    if (!user) return;
-
-    setSaving(true);
-
-    const completedHabits = Object.values(habits).filter(Boolean).length;
-    const entry = {
-      userId: user.id,
-      date: today,
-      habit1: habits.habit1 || false,
-      habit2: habits.habit2 || false,
-      habit3: habits.habit3 || false,
-      habit4: habits.habit4 || false,
-      habit5: habits.habit5 || false,
-      habit6: habits.habit6 || false,
-      habit7: habits.habit7 || false,
-      totalPoints: completedHabits,
+    const checkUser = async () => {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error || !user) {
+        router.push('/login');
+        return;
+      }
+      setUser(user);
+      
+      // Load initial data
+      await Promise.all([
+        loadCheckin(user.id),
+        loadLentRange(),
+        loadStats(user.id)
+      ]);
+      
+      setLoading(false);
     };
+    
+    checkUser();
+  }, [router, supabase]);
 
-    await saveEntry(entry);
-    await loadUserData(user.id);
-    setSaving(false);
+  // Load data when tab changes
+  useEffect(() => {
+    if (!user) return;
+    
+    if (currentTab === 'calendar') {
+      loadAllCheckins(user.id);
+    } else if (currentTab === 'social') {
+      loadSocialData();
+    }
+  }, [currentTab, user]);
+
+  const loadCheckin = async (userId: string) => {
+    try {
+      const res = await fetch(`/api/checkins?date=${todayStr}`);
+      if (res.ok) {
+        const data = await res.json();
+        setTodayCheckin(data);
+      }
+    } catch (e) {
+      console.error(e);
+    }
   };
 
-  const handleLogout = () => {
-    clearCurrentUser();
+  const loadAllCheckins = async (userId: string) => {
+    try {
+      const res = await fetch('/api/checkins?all=true');
+      if (res.ok) {
+        setAllCheckins(await res.json());
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const loadSocialData = async () => {
+    try {
+      const res = await fetch(`/api/social?date=${todayStr}`);
+      if (res.ok) {
+        setSocialData(await res.json());
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const loadLentRange = async () => {
+    const res = await fetch('/api/lent/range');
+    if (res.ok) setLentRange(await res.json());
+  };
+  
+  const loadStats = async (userId: string) => {
+    try {
+      const res = await fetch('/api/checkins?all=true');
+      if (res.ok) {
+        const data = await res.json();
+        const completed = data.filter((c: any) => c.prayed_rosary);
+        
+        // Calculate streak
+        let streak = 0;
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        
+        const hasToday = completed.some((c: any) => c.date === todayStr);
+        let currentCheckDate = new Date(today);
+        
+        if (!hasToday) {
+           currentCheckDate.setDate(currentCheckDate.getDate() - 1);
+        }
+        
+        while (true) {
+          const checkStr = format(currentCheckDate, 'yyyy-MM-dd');
+          const hasEntry = completed.some((c: any) => c.date === checkStr);
+          if (hasEntry) {
+            streak++;
+            currentCheckDate.setDate(currentCheckDate.getDate() - 1);
+          } else {
+            break;
+          }
+        }
+        
+        setStats({
+          streak: streak,
+          totalDays: completed.length
+        });
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleRosaryToggle = async () => {
+    const newVal = !todayCheckin?.prayed_rosary;
+    
+    // Optimistic UI
+    const prevCheckin = todayCheckin;
+    setTodayCheckin((prev: any) => ({ ...prev, prayed_rosary: newVal }));
+
+    if (newVal) {
+      toast.success('¡Rosario completado!');
+    } else {
+      toast('Rosario desmarcado');
+    }
+
+    try {
+      const res = await fetch('/api/checkins', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          date: todayStr,
+          prayedRosary: newVal 
+        })
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Error al guardar');
+      }
+      
+      const data = await res.json();
+      setTodayCheckin(data);
+      loadStats(user.id);
+    } catch (e: any) {
+      console.error(e);
+      setTodayCheckin(prevCheckin);
+      toast.error(e.message || 'Error al guardar');
+    }
+  };
+
+  const handlePurposeSave = async (text: string) => {
+    const res = await fetch('/api/checkins', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        date: todayStr,
+        intention: text 
+      })
+    });
+    
+    if (res.ok) {
+      const data = await res.json();
+      setTodayCheckin(data);
+      toast.success('Propósito guardado');
+    } else {
+      const errorData = await res.json().catch(() => ({}));
+      toast.error(errorData.error || 'Error al guardar propósito');
+      throw new Error(errorData.error || 'Failed to save');
+    }
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     router.push('/login');
   };
 
-  const completedCount = Object.values(habits).filter(Boolean).length;
-  const progressValue = completedCount / CONFIG.habits.length;
-
-  const dateLabel = useMemo(
-    () => format(new Date(), "EEEE, d 'de' MMMM", { locale: es }),
-    []
-  );
-
-  if (!user) return null;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg-subtle)]">
+        <div className="w-8 h-8 border-4 border-[var(--primary)] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pb-32 bg-[var(--bg-subtle)]">
       {/* Header */}
       <header className="px-6 pt-8 pb-4 bg-[var(--bg-subtle)] sticky top-0 z-20 backdrop-blur-md bg-opacity-90">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-2 text-[var(--text-secondary)] mb-1">
-              <Calendar size={14} />
-              <span className="text-xs font-medium uppercase tracking-wider">{dateLabel}</span>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-[#18181B] text-white flex items-center justify-center font-bold text-lg">
+              {user?.user_metadata?.full_name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
             </div>
-            <h1 className="text-2xl font-bold text-[var(--text)] tracking-tight">
-              Hola, {user.name.split(' ')[0]}
-            </h1>
+            <div>
+              <h1 className="font-bold text-[var(--text)] leading-tight">
+                {user?.user_metadata?.full_name?.split(' ')[0] || 'Usuario'}
+              </h1>
+              <div className="flex items-center gap-3 text-xs text-[var(--text-secondary)]">
+                <span className="flex items-center gap-1">
+                  <Flame size={12} className="text-orange-500" />
+                  {stats.streak} días racha
+                </span>
+                <span className="flex items-center gap-1">
+                  <Trophy size={12} className="text-yellow-500" />
+                  {stats.totalDays} total
+                </span>
+              </div>
+            </div>
           </div>
 
           <div className="flex items-center gap-3">
             <ThemeToggle />
             <button
               onClick={handleLogout}
-              className="h-10 w-10 rounded-full bg-[var(--surface)] border border-[var(--border)] shadow-sm flex items-center justify-center hover:bg-[var(--bg-subtle)] transition-colors text-[var(--text-secondary)] hover:text-[var(--text)]"
-              aria-label="Cerrar sesión"
+              className="h-10 w-10 rounded-full bg-[var(--surface)] border border-[var(--border)] flex items-center justify-center text-[var(--text-secondary)]"
             >
               <LogOut size={18} />
             </button>
@@ -193,108 +257,117 @@ export default function DashboardPage() {
       </header>
 
       <main className="px-6 space-y-6">
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 space-y-4">
-             <div className="w-8 h-8 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin"></div>
-             <p className="text-sm text-[var(--text-secondary)]">Cargando tu progreso...</p>
-          </div>
-        ) : (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-          >
-            <StatsGrid
-              progress={progressValue}
-              completedCount={completedCount}
-              totalHabits={CONFIG.habits.length}
-              streak={streak}
-              totalPoints={totalPoints}
-            />
+        <AnimatePresence mode="wait">
+          {currentTab === 'home' && (
+            <motion.div
+              key="home"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              className="space-y-6"
+            >
+              <RosaryCard />
 
-            <div className="space-y-4">
-              <div className="flex items-center justify-between px-1">
-                <h2 className="text-lg font-semibold text-[var(--text)]">Tus Hábitos</h2>
-                <span className="text-xs font-medium text-[var(--text-tertiary)] bg-[var(--surface)] px-2 py-1 rounded-full border border-[var(--border)]">
-                  {completedCount}/{CONFIG.habits.length}
-                </span>
-              </div>
-              
-              <div className="space-y-3">
-                <AnimatePresence>
-                  {CONFIG.habits.map((habit: Habit, index: number) => {
-                    const ui = HABIT_UI[habit.id];
-                    return (
-                      <motion.div
-                        key={habit.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                      >
-                        <HabitCard
-                          title={habit.name}
-                          subtitle={ui?.subtitle ?? 'Completa el hábito'}
-                          emoji={habit.emoji}
-                          background={ui?.background ?? '#FFFFFF'}
-                          iconBackground={ui?.iconBackground ?? '#F5F5F5'}
-                          checked={habits[habit.id] || false}
-                          onToggle={() => handleHabitToggle(habit.id)}
-                        />
-                      </motion.div>
-                    );
-                  })}
-                </AnimatePresence>
-              </div>
-            </div>
-            
-            <div className="h-24" />
-          </motion.div>
-        )}
-      </main>
-
-      {/* Floating Action Button for Save */}
-      <AnimatePresence>
-        {!loading && (
-          <motion.div
-            initial={{ y: 100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 100, opacity: 0 }}
-            className="fixed bottom-[90px] left-0 right-0 z-40 px-6 pointer-events-none"
-          >
-            <div className="mx-auto max-w-[430px] flex justify-center pointer-events-auto">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={handleSave}
-                disabled={saving}
+              <button
+                onClick={handleRosaryToggle}
                 className={`
-                  h-14 px-8 rounded-full shadow-xl font-semibold text-[var(--primary-foreground)] flex items-center gap-2 backdrop-blur-sm transition-all duration-300
-                  ${saving 
-                    ? 'bg-[var(--text-secondary)] cursor-not-allowed' 
-                    : 'bg-[var(--primary)] hover:bg-[var(--text)] shadow-[0_8px_30px_rgb(0,0,0,0.12)]'
+                  w-full p-6 rounded-2xl border transition-all duration-300 flex items-center gap-4 group
+                  ${todayCheckin?.prayed_rosary 
+                    ? 'bg-[var(--primary)] border-[var(--primary)] shadow-lg shadow-[var(--primary)]/20' 
+                    : 'bg-[var(--surface)] border-[var(--border)] hover:border-[var(--primary)]'
                   }
                 `}
               >
-                {saving ? (
-                   <>
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    <span>Guardando...</span>
-                   </>
-                ) : (
-                  <>
-                    <span>Guardar Progreso</span>
-                    <span className="bg-white/20 px-2 py-0.5 rounded-md text-xs font-mono ml-1">
-                       {completedCount}/{CONFIG.habits.length}
-                    </span>
-                  </>
-                )}
-              </motion.button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                <div className={`
+                  w-8 h-8 rounded-full border-2 flex items-center justify-center transition-colors
+                  ${todayCheckin?.prayed_rosary 
+                    ? 'bg-[var(--primary-foreground)] border-[var(--primary-foreground)] text-[var(--primary)]' 
+                    : 'border-[var(--text-tertiary)] group-hover:border-[var(--primary)]'
+                  }
+                `}>
+                  {todayCheckin?.prayed_rosary && <Check size={16} strokeWidth={3} />}
+                </div>
+                <div className="text-left">
+                  <h3 className={`font-bold text-lg ${todayCheckin?.prayed_rosary ? 'text-[var(--primary-foreground)]' : 'text-[var(--text)]'}`}>
+                    {todayCheckin?.prayed_rosary ? '¡Rosario completado!' : 'Marcar rosario de hoy'}
+                  </h3>
+                  {!todayCheckin?.prayed_rosary && (
+                    <p className="text-sm text-[var(--text-secondary)]">Toca aquí cuando termines de rezar</p>
+                  )}
+                </div>
+              </button>
+
+              <PurposeCard 
+                initialPurpose={todayCheckin?.intention} 
+                onSave={handlePurposeSave} 
+              />
+            </motion.div>
+          )}
+
+          {currentTab === 'calendar' && (
+            <motion.div
+              key="calendar"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+            >
+              <div className="bg-[var(--surface)] p-4 rounded-2xl border border-[var(--border)] mb-6">
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-[var(--text-secondary)]">Progreso Cuaresma</span>
+                  <span className="font-bold text-[var(--primary)]">
+                    {Math.round((stats.totalDays / 43) * 100)}%
+                  </span>
+                </div>
+                <div className="h-2 bg-[var(--bg-subtle)] rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-[var(--primary)] rounded-full transition-all duration-500"
+                    style={{ width: `${(stats.totalDays / 43) * 100}%` }}
+                  />
+                </div>
+                <p className="text-xs text-[var(--text-tertiary)] mt-2 text-center">
+                  {stats.totalDays} de 43 días completados
+                </p>
+              </div>
+
+              {lentRange && (
+                <CalendarGrid 
+                  startDate={new Date(lentRange.start)} 
+                  endDate={new Date(lentRange.end)} 
+                  checkins={allCheckins} 
+                />
+              )}
+            </motion.div>
+          )}
+
+          {currentTab === 'social' && (
+            <motion.div
+              key="social"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="font-bold text-xl text-[var(--text)]">Grupo</h2>
+                <div className="text-sm text-[var(--text-secondary)] bg-[var(--surface)] px-3 py-1 rounded-full border border-[var(--border)]">
+                  {socialData.filter(u => u.prayed_rosary).length} / {socialData.length} completaron
+                </div>
+              </div>
+              
+              <SocialList users={socialData} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </main>
 
       <BottomNav />
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[var(--bg-subtle)]" />}>
+      <DashboardContent />
+    </Suspense>
   );
 }

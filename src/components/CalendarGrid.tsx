@@ -1,52 +1,112 @@
 'use client';
 
-import { parseISO } from 'date-fns';
-import { CONFIG } from '@/lib/config';
-import type { DailyEntry } from '@/lib/storage';
+import { useState } from 'react';
+import { format, eachDayOfInterval, isSameDay, isAfter, startOfDay } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { Check, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
-export function CalendarGrid({ entries }: { entries: DailyEntry[] }) {
-  const startDate = parseISO(CONFIG.startDate);
-  const today = new Date();
+interface Checkin {
+  date: string;
+  prayed_rosary: boolean;
+  intention?: string;
+}
 
-  const dayState = (i: number) => {
-    const d = new Date(startDate);
-    d.setDate(d.getDate() + i);
+interface CalendarGridProps {
+  startDate: Date;
+  endDate: Date;
+  checkins: Checkin[];
+}
 
-    const isFuture = d.getTime() > new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+export function CalendarGrid({ startDate, endDate, checkins }: CalendarGridProps) {
+  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
+  
+  const days = eachDayOfInterval({ start: startDate, end: endDate });
+  const today = startOfDay(new Date());
 
-    const hasEntry = entries.some((e) => {
-      const entryDate = parseISO(e.date);
-      const diffDays = Math.floor((entryDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-      return diffDays === i && (e.total_points ?? 0) > 0;
-    });
-
-    const isToday =
-      d.getFullYear() === today.getFullYear() &&
-      d.getMonth() === today.getMonth() &&
-      d.getDate() === today.getDate();
-
-    return { hasEntry, isToday, isFuture };
+  const getCheckin = (date: Date) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    return checkins.find(c => c.date === dateStr);
   };
 
   return (
-    <div className="grid grid-cols-8 gap-2">
-      {Array.from({ length: CONFIG.totalDays }, (_, i) => {
-        const s = dayState(i);
-        return (
-          <div
-            key={i}
-            className={`h-8 w-8 rounded-full flex items-center justify-center text-[11px] font-medium ${
-              s.hasEntry
-                ? 'bg-[var(--color-success)] text-white'
-                : s.isFuture
-                ? 'bg-black/5 text-[var(--color-text-muted)]'
-                : 'bg-white text-[var(--color-text-muted)] border border-black/5'
-            } ${s.isToday ? 'ring-2 ring-[var(--color-accent)] ring-offset-2 ring-offset-[var(--color-bg)]' : ''}`}
-          >
-            {i + 1}
+    <div className="space-y-4">
+      <div className="grid grid-cols-7 gap-2">
+        {['D', 'L', 'M', 'M', 'J', 'V', 'S'].map((d, i) => (
+          <div key={i} className="text-center text-xs font-medium text-[var(--text-tertiary)] py-2">
+            {d}
           </div>
-        );
-      })}
+        ))}
+        
+        {/* Empty cells for offset. Feb 18 2026 is Wednesday. So we need 3 empty cells (Sun, Mon, Tue). */}
+        {Array.from({ length: days[0].getDay() }).map((_, i) => (
+          <div key={`empty-${i}`} />
+        ))}
+
+        {days.map((day, i) => {
+          const checkin = getCheckin(day);
+          const isToday = isSameDay(day, today);
+          const isFuture = isAfter(day, today);
+          const hasIntention = checkin?.intention;
+          
+          return (
+            <motion.button
+              key={i}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setSelectedDay(day)}
+              className={`
+                aspect-square rounded-xl flex flex-col items-center justify-center relative border transition-colors
+                ${isToday ? 'ring-2 ring-[var(--primary)] ring-offset-2 ring-offset-[var(--bg-subtle)]' : ''}
+                ${checkin?.prayed_rosary 
+                  ? 'bg-[var(--habit-7-icon-bg)] border-transparent text-[var(--primary)]' 
+                  : isFuture 
+                    ? 'bg-transparent border-transparent text-[var(--text-tertiary)] opacity-50'
+                    : 'bg-[var(--surface)] border-[var(--border)] text-[var(--text-secondary)]'
+                }
+              `}
+            >
+              <span className="text-xs font-medium">{format(day, 'd')}</span>
+              {checkin?.prayed_rosary && <Check size={14} className="mt-1" />}
+              {hasIntention && !checkin?.prayed_rosary && (
+                <div className="w-1.5 h-1.5 rounded-full bg-[var(--primary)] mt-1" />
+              )}
+            </motion.button>
+          );
+        })}
+      </div>
+
+      <AnimatePresence>
+        {selectedDay && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            className="bg-[var(--surface)] p-4 rounded-2xl border border-[var(--border)] shadow-sm"
+          >
+            <div className="flex justify-between items-start mb-2">
+              <h4 className="font-semibold text-[var(--text)]">
+                {format(selectedDay, "EEEE d 'de' MMMM", { locale: es })}
+              </h4>
+              <button 
+                onClick={() => setSelectedDay(null)}
+                className="text-[var(--text-tertiary)] hover:text-[var(--text)]"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            
+            {getCheckin(selectedDay)?.intention ? (
+              <p className="text-sm text-[var(--text-secondary)] italic">
+                "{getCheckin(selectedDay)?.intention}"
+              </p>
+            ) : (
+              <p className="text-sm text-[var(--text-tertiary)]">
+                Sin propósito registrado.
+              </p>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
